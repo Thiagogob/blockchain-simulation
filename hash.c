@@ -198,7 +198,7 @@ int main(int argc, char *argv[])
   //printf("Carteira[140]: %u", carteira[140]);
   //printf("hash bloco genesis minerado: ");
   //printHash(blocoGenesisMinerado.hash, SHA256_DIGEST_LENGTH);
-  //printf("cuuuu");
+  
   //mostraLista(enderecosComBTC);
   return 0;
 }
