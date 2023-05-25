@@ -7,6 +7,7 @@
 #include <string.h>
 #include "mtwister.h"
 #include "mtwister.c"
+#include <stdlib.h>
 
 typedef struct BlocoNaoMinerado{
   unsigned int numero;
@@ -20,6 +21,41 @@ typedef struct BlocoMinerado{
   unsigned char hash[SHA256_DIGEST_LENGTH];
 }BlocoMinerado;
 
+typedef struct listaBTC{
+  unsigned int endereco;
+  struct listaBTC *next;
+}listaBTC;
+
+listaBTC *criaNo(unsigned int endereco){
+  listaBTC* novoEndereco = (listaBTC*)malloc(sizeof(listaBTC));
+  if(novoEndereco == NULL){
+    printf("Alocacao de memoria falhou\n");
+    return NULL;
+  }
+  novoEndereco->endereco = endereco;
+  novoEndereco->next = NULL;
+  return novoEndereco;
+}
+
+void insereNoInicio(listaBTC** inicio, unsigned int endereco){
+  listaBTC* novoEndereco = criaNo(endereco);
+  if(inicio == NULL){
+    *inicio = novoEndereco;
+  }
+  else{
+    novoEndereco->next = *inicio;
+    *inicio = novoEndereco;
+  }
+}
+
+void mostraLista(listaBTC *inicio){
+  listaBTC* aux = inicio;
+  while(aux!=NULL){
+    printf("%u - ", aux->endereco);
+    aux = aux->next;
+  }
+  printf("\n");
+}
 
 void printHash(unsigned char hash[], int length)
 {
@@ -61,7 +97,7 @@ void inicializaCarteira(unsigned int * carteira){
   
 }
 
-BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira){
+BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira, listaBTC** enderecosComBTC){
 
   //vetor que armazenará o resultado do hash. Tamanho definidio pela libssl
   unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -78,9 +114,14 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
     SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
   }
 
+  //Agora que o bloco foi minerado
+  //Vamos passar ele para a struct de bloco minerado
   BlocoMinerado blocoGenesisMinerado;
+
+  //os campos do bloco nao minerado sao enviados para o bloco minerado
   blocoGenesisMinerado.bloco = *blocoGenesis;
 
+  //passando o hash que valida o bloco para a struct de bloco minerado
   for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
     blocoGenesisMinerado.hash[i] = hash[i];
   }
@@ -90,12 +131,22 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   printHash(hash, SHA256_DIGEST_LENGTH);
   */
 
- //ATUALIZA CARTEIRA DO SISTEMA DEPOIS DA VALIDAÇÃO DO BLOCO
+  //ATUALIZA CARTEIRA DO SISTEMA DEPOIS DA VALIDAÇÃO DO BLOCO
   carteira[minerador] = 50;
 
+  //COLOCA PRIMEIRO MINERADOR NA LISTA DE ENDERECOS COM BTC
+  insereNoInicio(enderecosComBTC, minerador);
+  
+  //mostraLista(*enderecosComBTC);
+
   return blocoGenesisMinerado;
+}
+
+/*
+void minerarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN){
 
 }
+*/
 
 int main(int argc, char *argv[])
 {
@@ -111,10 +162,18 @@ int main(int argc, char *argv[])
 
   //printf("CARTEIRA[122]: %u\n", carteira[122]);
 
+  //cria lista dos enderecos com BTC
+  listaBTC *enderecosComBTC = NULL;
+
   //minerando o bloco genesis
-  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira);
+  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC);
 
   //Minera 30.000 blocos agora
+    //BlocoMinerado blocoAnterior;
+
+    unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
+
+
   //minerarBloco();
   /*
   //vetor que armazenará o resultado do hash. Tamanho definidio pela libssl
@@ -137,8 +196,9 @@ int main(int argc, char *argv[])
   //printf("Hash: ");
   //printHash(hash, SHA256_DIGEST_LENGTH);
   //printf("Carteira[140]: %u", carteira[140]);
-  printf("hash bloco genesis minerado: ");
-  printHash(blocoGenesisMinerado.hash, SHA256_DIGEST_LENGTH);
-
+  //printf("hash bloco genesis minerado: ");
+  //printHash(blocoGenesisMinerado.hash, SHA256_DIGEST_LENGTH);
+  //printf("cuuuu");
+  //mostraLista(enderecosComBTC);
   return 0;
 }
