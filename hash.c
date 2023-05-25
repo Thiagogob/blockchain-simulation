@@ -50,13 +50,6 @@ void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis){
   //DEFININDO NONCE COMO 0 E NUMERO DO BLOCO COMO 1, COMO DITO NO ENUNCIADO
   blocoGenesis->nonce = 0;
   blocoGenesis->numero = 1;
-
-
-  //PROCESSO PARA DEFINIR NUMERO ALETORIO:
-  MTRand r = seedRand(1234567);
-  blocoGenesis->data[183] = genRandLong(&r)%256;
-  
-  
         
 }
 
@@ -68,10 +61,15 @@ void inicializaCarteira(unsigned int * carteira){
   
 }
 
-void minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis){
+BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira){
 
   //vetor que armazenará o resultado do hash. Tamanho definidio pela libssl
   unsigned char hash[SHA256_DIGEST_LENGTH];
+
+  //PROCESSO PARA DEFINIR NUMERO ALETORIO QUE REPRESENTA O MINERADOR DO BLOCO:
+  MTRand r = seedRand(1234567);
+  unsigned int minerador = genRandLong(&r)%256;
+  blocoGenesis->data[183] = minerador;
   
   SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
 
@@ -79,11 +77,24 @@ void minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis){
     blocoGenesis->nonce++;
     SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
   }
-  
+
+  BlocoMinerado blocoGenesisMinerado;
+  blocoGenesisMinerado.bloco = *blocoGenesis;
+
+  for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
+    blocoGenesisMinerado.hash[i] = hash[i];
+  }
+
   /*
   printf("Hash: ");
   printHash(hash, SHA256_DIGEST_LENGTH);
-  */  
+  */
+
+ //ATUALIZA CARTEIRA DO SISTEMA DEPOIS DA VALIDAÇÃO DO BLOCO
+  carteira[minerador] = 50;
+
+  return blocoGenesisMinerado;
+
 }
 
 int main(int argc, char *argv[])
@@ -97,10 +108,14 @@ int main(int argc, char *argv[])
   //inicializando carteira conforme pedido no enunciado
   unsigned int carteira[256];
   inicializaCarteira(carteira);
+
   //printf("CARTEIRA[122]: %u\n", carteira[122]);
-  minerarBlocoGenesis(&blocoGenesis);
 
+  //minerando o bloco genesis
+  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira);
 
+  //Minera 30.000 blocos agora
+  //minerarBloco();
   /*
   //vetor que armazenará o resultado do hash. Tamanho definidio pela libssl
   unsigned char hash[SHA256_DIGEST_LENGTH]; 
@@ -117,10 +132,13 @@ int main(int argc, char *argv[])
   }
   */
  
-  printf("Nonce: %d\n", blocoGenesis.nonce);
-  printf("Minerador: %u\n", blocoGenesis.data[183]);
+  printf("Nonce: %d\n", blocoGenesisMinerado.bloco.nonce);
+  printf("Minerador: %u\n", blocoGenesisMinerado.bloco.data[183]);
   //printf("Hash: ");
   //printHash(hash, SHA256_DIGEST_LENGTH);
+  //printf("Carteira[140]: %u", carteira[140]);
+  printf("hash bloco genesis minerado: ");
+  printHash(blocoGenesisMinerado.hash, SHA256_DIGEST_LENGTH);
 
   return 0;
 }
