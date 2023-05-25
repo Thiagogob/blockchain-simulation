@@ -66,6 +66,12 @@ void printHash(unsigned char hash[], int length)
 
   printf("\n");
 }
+
+unsigned char gerarNumeroAleatorio(int valorMaximo){
+    MTRand r = seedRand(1234567);
+    unsigned char numeroAleatorio = genRandLong(&r)%valorMaximo;
+    return numeroAleatorio;
+}
  
 void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis){
 
@@ -103,8 +109,7 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   unsigned char hash[SHA256_DIGEST_LENGTH];
 
   //PROCESSO PARA DEFINIR NUMERO ALETORIO QUE REPRESENTA O MINERADOR DO BLOCO:
-  MTRand r = seedRand(1234567);
-  unsigned int minerador = genRandLong(&r)%256;
+  unsigned char minerador = gerarNumeroAleatorio(256);
   blocoGenesis->data[183] = minerador;
   
   SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
@@ -116,14 +121,14 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
 
   //Agora que o bloco foi minerado
   //Vamos passar ele para a struct de bloco minerado
-  BlocoMinerado blocoGenesisMinerado;
+  BlocoMinerado* blocoGenesisMinerado = malloc(sizeof(BlocoMinerado));
 
   //os campos do bloco nao minerado sao enviados para o bloco minerado
-  blocoGenesisMinerado.bloco = *blocoGenesis;
+  blocoGenesisMinerado->bloco = *blocoGenesis;
 
   //passando o hash que valida o bloco para a struct de bloco minerado
   for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
-    blocoGenesisMinerado.hash[i] = hash[i];
+    blocoGenesisMinerado->hash[i] = hash[i];
   }
 
   /*
@@ -139,22 +144,51 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   
   //mostraLista(*enderecosComBTC);
 
-  return blocoGenesisMinerado;
+  return *blocoGenesisMinerado;
 }
 
-/*
-void minerarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN){
+void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int i){
+  //preenchendo o campo do numero que representa
+  blocoN->numero = i;
+
+  //inicializando campo nonce
+  blocoN->nonce = 0;
+
+  //preenchendo o campo de hash anterior
+  for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
+    blocoN->hashAnterior[i] = hashAnterior[i];
+  }
+
+  //decidindo quem será o minerador do bloco
+  unsigned char minerador = gerarNumeroAleatorio(256);
+  blocoN->data[183] = minerador;
+
+  //decidindo quantidade de transacoes no bloco
+  unsigned char qtdTransacoes = gerarNumeroAleatorio(61);
+   
+  //definindo os elementos das transacoes
+  for(int i=0; i<qtdTransacoes; i++){
+    //definindo endereco de origem
+    i++;
+
+    //definindo endereco de destino
+    i++;
+    
+    //definindo quantidade de BTC
+    i++;
+
+  }
 
 }
-*/
+
 
 int main(int argc, char *argv[])
 {
  
   //instanciando e preenchendo bloco genesis
   //da maneira solicitada no enunciado
-  BlocoNaoMinerado blocoGenesis;
-  preencheBlocoGenesis(&blocoGenesis);
+  BlocoNaoMinerado* blocoGenesis = malloc(sizeof(BlocoNaoMinerado));
+  preencheBlocoGenesis(blocoGenesis);
 
   //inicializando carteira conforme pedido no enunciado
   unsigned int carteira[256];
@@ -165,13 +199,38 @@ int main(int argc, char *argv[])
   //cria lista dos enderecos com BTC
   listaBTC *enderecosComBTC = NULL;
 
+  //cria vetor de 16 posições para armazenar blocos minerados
+  BlocoMinerado vetorBlocosMinerados[16];
+
   //minerando o bloco genesis
-  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC);
+  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC);
 
   //Minera 30.000 blocos agora
-    //BlocoMinerado blocoAnterior;
+  //BlocoMinerado blocoAnterior;
+  /*
+  for(int i = 0; i < 3; i++){
 
-    unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
+    //caso especial, onde o primeiro indice do vetor
+    //eh o bloco genesis
+    if(i==0){
+      vetorBlocosMinerados[i] = blocoGenesisMinerado;
+    }
+
+    else{
+
+       //alocando memoria para o bloco
+       BlocoNaoMinerado* blocoN = malloc(sizeof(BlocoNaoMinerado));
+
+       //chamando uma funcao para preencher o bloco
+       //passando o hash anterior + o bloco a ser minerado + i
+       inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i);
+
+
+    }
+
+  }
+  */
+  //unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
 
 
   //minerarBloco();
@@ -193,6 +252,7 @@ int main(int argc, char *argv[])
  
   printf("Nonce: %d\n", blocoGenesisMinerado.bloco.nonce);
   printf("Minerador: %u\n", blocoGenesisMinerado.bloco.data[183]);
+  //printf("aleatorio teste: %u", gerarNumeroAleatorio(61));
   //printf("Hash: ");
   //printHash(hash, SHA256_DIGEST_LENGTH);
   //printf("Carteira[140]: %u", carteira[140]);
