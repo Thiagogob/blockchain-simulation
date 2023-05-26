@@ -217,6 +217,12 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   // inicializando campo nonce
   blocoN->nonce = 0;
 
+  // PREENCHENDO VETOR DATA COM ZEROS
+  for (int i = 0; i < 184; i++)
+  {
+    blocoN->data[i] = 0;
+  }
+
   // preenchendo o campo de hash anterior
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
   {
@@ -260,7 +266,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
 
 }
 
-BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira){
+BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, listaBTC **enderecosComBTC, int *contador){
 
   BlocoMinerado* blocoNMinerado = malloc(sizeof(BlocoMinerado));
 
@@ -281,6 +287,8 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira){
 
   unsigned char minerador = blocoN->data[183];
   carteira[minerador] += 50;
+
+  insereNoInicio(enderecosComBTC, minerador, contador);
 
   blocoNMinerado->bloco = *blocoN;
 
@@ -340,7 +348,7 @@ int main(int argc, char *argv[])
   BlocoNaoMinerado* blocoN = malloc(sizeof(BlocoNaoMinerado));
   vetorBlocosMinerados[0] = blocoGenesisMinerado;
   inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 1, &r, &contador, enderecosComBTC, carteira);
-  BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira);
+  BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira, &enderecosComBTC, &contador);
 
   for (int i = 0; i < 9; i++)
   {
@@ -356,8 +364,9 @@ int main(int argc, char *argv[])
   printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
   printf("\nNonce: %d\n", blocoN->nonce);
   printf("Minerador: %u\n", blocoN->data[183]);
-  printf("carteira: %u", carteira[blocoN->data[183]]);
-
+  printf("carteira: %u\n", carteira[blocoN->data[183]]);
+  printf("lista de enderecos com BTC: ");
+  mostraLista(enderecosComBTC);
 
   // unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
 
