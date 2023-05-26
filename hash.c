@@ -159,8 +159,14 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
 
   // COLOCA PRIMEIRO MINERADOR NA LISTA DE ENDERECOS COM BTC
   insereNoInicio(enderecosComBTC, minerador, contador);
+  /*
+  insereNoInicio(enderecosComBTC, (unsigned char)100, contador);
+  insereNoInicio(enderecosComBTC, (unsigned char)50, contador);
+  insereNoInicio(enderecosComBTC, (unsigned char)20, contador);
+  insereNoInicio(enderecosComBTC, (unsigned char)70, contador);
+  */
 
-  // mostraLista(*enderecosComBTC);
+  //mostraLista(*enderecosComBTC);
   // printf("contador: %d\n", *contador);
 
   return *blocoGenesisMinerado;
@@ -174,6 +180,33 @@ unsigned char procuraEnderecoDestino(listaBTC *enderecosComBTC, int indice)
     tmp = tmp->next;
   }
   return tmp->endereco;
+}
+
+void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *contador){
+
+  listaBTC *tmp = *enderecosComBTC;
+  listaBTC *anterior = NULL;
+
+  if(tmp != NULL && tmp->endereco == endereco){
+    *enderecosComBTC = tmp->next;
+    free(tmp);
+    (*contador)--;
+    return;
+  }
+
+  while(tmp != NULL && tmp->endereco != endereco){
+    anterior = tmp;
+    tmp = tmp->next;
+  }
+
+  if(tmp!=NULL){
+    anterior->next = tmp->next;
+    free(tmp);
+    (*contador)--;
+  }
+
+  return;
+
 }
 
 void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int i, MTRand *r, int *contador, listaBTC *enderecosComBTC, unsigned int *carteira)
@@ -195,7 +228,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   printf("Quantidade de transacoes no bloco: %u\n", qtdTransacoes);
   // definindo os elementos das transacoes
 
-  for (int i = 0; i < 5; i++)
+  for (int i = 0; i < qtdTransacoes; i++)
   {
     for (int j = 0; j < 3; j++)
     {
@@ -204,7 +237,6 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
       int indice = genRandLong(r) % (*contador);
       unsigned char endOrigem = procuraEnderecoDestino(enderecosComBTC, indice);
       blocoN->data[(i * 3) + j] = endOrigem;
-
       j++;
 
       // gerar endereco de destino
@@ -216,7 +248,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
       blocoN->data[(i * 3) + j] = qtdBTC;
 
       //atualizando carteira para nao haver inconsistencia
-      //por exemplo um endereco que possui 10BTC estar dando 20BTC
+      //por exemplo um endereco que possui 10BTC estar repassar 20BTC
       carteira[endOrigem] = carteira[endOrigem] - qtdBTC;
       
     }
@@ -225,6 +257,34 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   // decidindo quem será o minerador do bloco
   unsigned char minerador = genRandLong(r) % 256;
   blocoN->data[183] = minerador;
+
+}
+
+BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira){
+
+  BlocoMinerado* blocoNMinerado = malloc(sizeof(BlocoMinerado));
+
+  
+
+  unsigned char hash[SHA256_DIGEST_LENGTH];
+
+  SHA256((unsigned char *)blocoN, sizeof(BlocoNaoMinerado), hash);
+
+  while(hash[0]!=0){
+    blocoN->nonce++;
+    SHA256((unsigned char *)blocoN, sizeof(BlocoNaoMinerado), hash);
+  }
+
+  for(int i =0; i<SHA256_DIGEST_LENGTH; i++){
+    blocoNMinerado->hash[i] = hash[i];
+  }
+
+  unsigned char minerador = blocoN->data[183];
+  carteira[minerador] += 50;
+
+  blocoNMinerado->bloco = *blocoN;
+
+  return blocoNMinerado;
 }
 
 int main(int argc, char *argv[])
@@ -280,6 +340,13 @@ int main(int argc, char *argv[])
   BlocoNaoMinerado* blocoN = malloc(sizeof(BlocoNaoMinerado));
   vetorBlocosMinerados[0] = blocoGenesisMinerado;
   inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 1, &r, &contador, enderecosComBTC, carteira);
+  BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira);
+  printf("Hash: ");
+  printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
+  printf("\nNonce: %d\n", blocoN->nonce);
+  printf("Minerador: %u\n", blocoN->data[183]);
+
+
 
   // unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
 
@@ -300,8 +367,8 @@ int main(int argc, char *argv[])
   }
   */
 
-  printf("Nonce: %d\n", blocoGenesisMinerado.bloco.nonce);
-  printf("Minerador: %u\n", blocoGenesisMinerado.bloco.data[183]);
+  //printf("Nonce: %d\n", blocoGenesisMinerado.bloco.nonce);
+  //printf("Minerador: %u\n", blocoGenesisMinerado.bloco.data[183]);
   // printf("aleatorio teste: %lu", genRandLong(&r)%61);
   // printf("Hash: ");
   // printHash(hash, SHA256_DIGEST_LENGTH);
@@ -344,6 +411,20 @@ int main(int argc, char *argv[])
     }
   }
   */
+  //mostraLista(enderecosComBTC);
+  //insereNoInicio(&enderecosComBTC, (unsigned char)100, &contador);
+  //insereNoInicio(&enderecosComBTC, (unsigned char)50, &contador);
+  //insereNoInicio(&enderecosComBTC, (unsigned char)20, &contador);
+  //insereNoInicio(&enderecosComBTC, (unsigned char)70, &contador);
+  
+  //mostraLista(enderecosComBTC);
+  //printf("qtd elementos: %d", contador);
 
+  //removerEndereco(&enderecosComBTC, 70, &contador);
+  //removerEndereco(&enderecosComBTC, 140, &contador);
+
+  //mostraLista(enderecosComBTC);
+
+  //printf("qtd elementos: %d", contador);
   return 0;
 }
