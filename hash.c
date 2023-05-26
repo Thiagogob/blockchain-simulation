@@ -9,6 +9,7 @@
 #include "mtwister.c"
 #include <stdlib.h>
 
+
 typedef struct BlocoNaoMinerado{
   unsigned int numero;
   unsigned int nonce;
@@ -37,7 +38,7 @@ listaBTC *criaNo(unsigned int endereco){
   return novoEndereco;
 }
 
-void insereNoInicio(listaBTC** inicio, unsigned int endereco){
+void insereNoInicio(listaBTC** inicio, unsigned int endereco, int* contador){
   listaBTC* novoEndereco = criaNo(endereco);
   if(inicio == NULL){
     *inicio = novoEndereco;
@@ -45,6 +46,7 @@ void insereNoInicio(listaBTC** inicio, unsigned int endereco){
   else{
     novoEndereco->next = *inicio;
     *inicio = novoEndereco;
+    (*contador)++;
   }
 }
 
@@ -67,11 +69,13 @@ void printHash(unsigned char hash[], int length)
   printf("\n");
 }
 
+/*
 unsigned char gerarNumeroAleatorio(int valorMaximo){
     MTRand r = seedRand(1234567);
     unsigned char numeroAleatorio = genRandLong(&r)%valorMaximo;
     return numeroAleatorio;
 }
+*/
  
 void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis){
 
@@ -103,13 +107,13 @@ void inicializaCarteira(unsigned int * carteira){
   
 }
 
-BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira, listaBTC** enderecosComBTC){
+BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira, listaBTC** enderecosComBTC, MTRand *r, int *contador){
 
   //vetor que armazenará o resultado do hash. Tamanho definidio pela libssl
   unsigned char hash[SHA256_DIGEST_LENGTH];
 
   //PROCESSO PARA DEFINIR NUMERO ALETORIO QUE REPRESENTA O MINERADOR DO BLOCO:
-  unsigned char minerador = gerarNumeroAleatorio(256);
+  unsigned char minerador = genRandLong(r)%256;
   blocoGenesis->data[183] = minerador;
   
   SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
@@ -140,14 +144,16 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   carteira[minerador] = 50;
 
   //COLOCA PRIMEIRO MINERADOR NA LISTA DE ENDERECOS COM BTC
-  insereNoInicio(enderecosComBTC, minerador);
+  insereNoInicio(enderecosComBTC, minerador, contador);
+
   
   //mostraLista(*enderecosComBTC);
-
+  //printf("contador: %d\n", *contador);
+  
   return *blocoGenesisMinerado;
 }
 
-void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int i){
+void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int i, MTRand *r, int *contador){
   //preenchendo o campo do numero que representa
   blocoN->numero = i;
 
@@ -160,31 +166,44 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   }
 
   //decidindo quem será o minerador do bloco
-  unsigned char minerador = gerarNumeroAleatorio(256);
+  unsigned char minerador = genRandLong(r)%256;
   blocoN->data[183] = minerador;
 
   //decidindo quantidade de transacoes no bloco
-  unsigned char qtdTransacoes = gerarNumeroAleatorio(61);
+  unsigned char qtdTransacoes = genRandLong(r)%256;
    
   //definindo os elementos das transacoes
+  
   for(int i=0; i<qtdTransacoes; i++){
-    //definindo endereco de origem
-    i++;
-
-    //definindo endereco de destino
-    i++;
-    
-    //definindo quantidade de BTC
-    i++;
+    for(int j=0; j<3; j++){
+      switch (j){
+        case 0:{
+          //gerar endereco de origem
+          }
+          break;
+        case 1:{
+          //gerar endereco de destino
+          blocoN->data[(i*3)+j] = genRandLong(r)%256;
+          }
+          break;
+        case 2:{
+          //definir quantidade de bitcoins
+          }
+          break;
+      }
+      
+    }
 
   }
+  
 
 }
 
 
 int main(int argc, char *argv[])
 {
- 
+  MTRand r = seedRand(1234567);
+  int contador = 0;
   //instanciando e preenchendo bloco genesis
   //da maneira solicitada no enunciado
   BlocoNaoMinerado* blocoGenesis = malloc(sizeof(BlocoNaoMinerado));
@@ -203,7 +222,7 @@ int main(int argc, char *argv[])
   BlocoMinerado vetorBlocosMinerados[16];
 
   //minerando o bloco genesis
-  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC);
+  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
   //Minera 30.000 blocos agora
   //BlocoMinerado blocoAnterior;
@@ -223,7 +242,7 @@ int main(int argc, char *argv[])
 
        //chamando uma funcao para preencher o bloco
        //passando o hash anterior + o bloco a ser minerado + i
-       inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i);
+       inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i, &r);
 
 
     }
@@ -252,7 +271,7 @@ int main(int argc, char *argv[])
  
   printf("Nonce: %d\n", blocoGenesisMinerado.bloco.nonce);
   printf("Minerador: %u\n", blocoGenesisMinerado.bloco.data[183]);
-  //printf("aleatorio teste: %u", gerarNumeroAleatorio(61));
+  //printf("aleatorio teste: %lu", genRandLong(&r)%61);
   //printf("Hash: ");
   //printHash(hash, SHA256_DIGEST_LENGTH);
   //printf("Carteira[140]: %u", carteira[140]);
@@ -260,5 +279,40 @@ int main(int argc, char *argv[])
   //printHash(blocoGenesisMinerado.hash, SHA256_DIGEST_LENGTH);
   
   //mostraLista(enderecosComBTC);
+  /*
+  MTRand r = seedRand(1234567);
+  unsigned char vetorLoco[9];
+  for(int i=0; i<3; i++){
+    for(int j=0; j<3; j++){
+      switch (j){
+        case 0:{
+          unsigned char endO = genRandLong(&r)%256;
+          printf("endereco de origem: %u\n", endO);
+          vetorLoco[(i*3)+j] = endO;
+          }
+          break;
+        case 1:{
+          unsigned char endD = genRandLong(&r)%256;
+          printf("endereco de destino: %u\n", endD);
+          vetorLoco[(i*3)+j] = endD;
+          }
+          break;
+        case 2:
+          printf("quantidade de BTC: %u\n", 50);
+          vetorLoco[(i*3)+j] = 50;
+          break;
+      }
+      
+    }
+
+  }
+
+  for(int i=0; i<9; i++){
+    printf("[%u] - ", vetorLoco[i]);
+    if((i+1)%3==0){
+      printf("\n");
+    }
+  }
+  */
   return 0;
 }
