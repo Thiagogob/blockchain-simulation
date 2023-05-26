@@ -303,9 +303,10 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
 
       if(j==1){
         //printf("indice: %u\n", blocoN->data[(i*3)+1]);
-        carteira[blocoN->data[(i*3)+1]] = blocoN->data[(i*3)+2];
+        carteira[blocoN->data[(i*3)+1]] += blocoN->data[(i*3)+2];
+        insereNoInicio(enderecosComBTC, blocoN->data[(i*3)+1], contador);
       }
-      
+
     }
   }
   
