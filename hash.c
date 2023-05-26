@@ -209,10 +209,10 @@ void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *co
 
 }
 
-void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int i, MTRand *r, int *contador, listaBTC *enderecosComBTC, unsigned int *carteira, unsigned char qtdTransacoes)
+void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int numeroBloco, MTRand *r, int *contador, listaBTC *enderecosComBTC, unsigned int *carteira, unsigned char qtdTransacoes)
 {
   // preenchendo o campo do numero que representa
-  blocoN->numero = i;
+  blocoN->numero = numeroBloco;
 
   // inicializando campo nonce
   blocoN->nonce = 0;
@@ -234,7 +234,30 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   
   printf("Quantidade de transacoes no bloco: %u\n", qtdTransacoes);
   // definindo os elementos das transacoes
+  if(numeroBloco == 2){
+    for(int i=0; i<qtdTransacoes; i++){
+      for(int j=0; j<3; j++){
 
+        blocoN->data[(i * 3) + j] = 140;
+        j++;
+
+        // gerar endereco de destino
+        blocoN->data[(i * 3) + j] = genRandLong(r) % 256;
+        j++;
+
+
+        // definir quantidade de bitcoins
+        unsigned char qtdBTC = (genRandLong(r) % (carteira[140]));
+        blocoN->data[(i * 3) + j] = qtdBTC;
+
+        //atualizando carteira para nao haver inconsistencia
+        //por exemplo um endereco que possui 10BTC estar repassar 20BTC
+        printf("quantidade na carteira[140]: %u\n", carteira[140]);
+        carteira[140] = carteira[140] - qtdBTC;        
+      }
+    }
+  }
+  else{
   for (int i = 0; i < qtdTransacoes; i++)
   {
     for (int j = 0; j < 3; j++)
@@ -259,6 +282,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
       carteira[endOrigem] = carteira[endOrigem] - qtdBTC;
       
     }
+  }
   }
 
   // decidindo quem será o minerador do bloco
@@ -300,15 +324,30 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
       //agora que o bloco foi validado
       //devemos atualizar os saldos
       //dos enderecos que receberam BTC
-
       if(j==1){
         //printf("indice: %u\n", blocoN->data[(i*3)+1]);
         carteira[blocoN->data[(i*3)+1]] += blocoN->data[(i*3)+2];
-        insereNoInicio(enderecosComBTC, blocoN->data[(i*3)+1], contador);
+
+        if(blocoN->data[(i*3)+2] != 0){
+          insereNoInicio(enderecosComBTC, blocoN->data[(i*3)+1], contador);
+        }
       }
 
     }
   }
+
+  //antes de retornar o bloco minerado
+  //vamos verificar a necessidade de remover
+  //algum endereco da lista de enderecos com BTC
+  //afinal, alguem pode ter doado todas as bitcoins que tinha num bloco
+  listaBTC* tmp = *enderecosComBTC;
+  while(tmp!=NULL){
+    if(carteira[tmp->endereco] == 0){
+      removerEndereco(enderecosComBTC, tmp->endereco, contador);
+    }
+    tmp = tmp->next;
+  }
+   
   
 
   return blocoNMinerado;
@@ -371,7 +410,7 @@ int main(int argc, char *argv[])
   // decidindo quantidade de transacoes no bloco
   unsigned char qtdTransacoes = genRandLong(&r) % 256;
 
-  inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 1, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
+  inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
 
   BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira, &enderecosComBTC, &contador, qtdTransacoes);
 
@@ -391,9 +430,10 @@ int main(int argc, char *argv[])
   printf("Minerador: %u\n", blocoN->data[183]);
   printf("lista de enderecos com BTC: ");
   mostraLista(enderecosComBTC);
-  printf("carteira[10]: %u\n", carteira[10]);
+  printf("carteira[136]: %u\n", carteira[136]);
+  printf("carteira[139]: %u\n", carteira[139]);
   printf("carteira[250]: %u\n", carteira[250]);
-  printf("carteira[134]: %u\n", carteira[134]);
+  printf("carteira[140]: %u\n", carteira[140]);
   
 
   // unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
