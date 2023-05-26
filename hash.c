@@ -341,11 +341,22 @@ int main(int argc, char *argv[])
   vetorBlocosMinerados[0] = blocoGenesisMinerado;
   inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 1, &r, &contador, enderecosComBTC, carteira);
   BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira);
-  printf("Hash: ");
+
+  for (int i = 0; i < 9; i++)
+  {
+    printf("[%u] - ", blocoN->data[i]);
+    if ((i + 1) % 3 == 0)
+    {
+      printf("\n");
+    }
+  }
+  printf("Hash anterior: ");
+  printHash(blocoN->hashAnterior, SHA256_DIGEST_LENGTH);
+  printf("Hash valido: ");
   printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
   printf("\nNonce: %d\n", blocoN->nonce);
   printf("Minerador: %u\n", blocoN->data[183]);
-
+  printf("carteira: %u", carteira[blocoN->data[183]]);
 
 
   // unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
