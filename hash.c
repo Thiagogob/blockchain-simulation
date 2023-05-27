@@ -486,7 +486,7 @@ int main(int argc, char *argv[])
   // da maneira solicitada no enunciado
   BlocoNaoMinerado blocoGenesis;
   preencheBlocoGenesis(&blocoGenesis);
-
+  printf("oi pedro");
   // inicializando carteira conforme pedido no enunciado
   unsigned int carteira[256];
   inicializaCarteira(carteira);
