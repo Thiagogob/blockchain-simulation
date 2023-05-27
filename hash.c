@@ -344,7 +344,7 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
   carteira[minerador] += 50;
 
   //inserindo minerador na lista dos que tem BTC
-  //(necessario rever, mesmo endereco pode estar sendo colocado duas vezes)
+  //caso ele nao esteja
   if(verificaSeMineradorPodeEntrarNaLista(*enderecosComBTC, minerador)){
     insereNoInicio(enderecosComBTC, minerador, contador);
   }
@@ -415,32 +415,7 @@ int main(int argc, char *argv[])
   // minerando o bloco genesis
   BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
-  // Minera 30.000 blocos agora
-  // BlocoMinerado blocoAnterior;
-  /*
-  for(int i = 0; i < 3; i++){
-
-    //caso especial, onde o primeiro indice do vetor
-    //eh o bloco genesis
-    if(i==0){
-      vetorBlocosMinerados[i] = blocoGenesisMinerado;
-      inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i, &r, &contador, enderecosComBTC, carteira);
-    }
-
-    else{
-
-       //alocando memoria para o bloco
-       BlocoNaoMinerado* blocoN = malloc(sizeof(BlocoNaoMinerado));
-
-       //chamando uma funcao para preencher o bloco
-       //passando o hash anterior + o bloco a ser minerado + i
-       inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i, &r, &contador, enderecosComBTC, carteira);
-
-
-    }
-
-  }
-  */
+  // Minerar 30.000 blocos agora
   for (int i = 0; i < 3; i++)
   {
 
@@ -461,7 +436,7 @@ int main(int argc, char *argv[])
 
     vetorBlocosMinerados[i%16] = *blocoNMinerado;
 
-    /*
+    printf("\nTRANSACOES\n");
     for (int i = 0; i < 184; i++)
     {
       printf("[%u] - ", blocoN->data[i]);
@@ -470,16 +445,17 @@ int main(int argc, char *argv[])
         printf("\n");
       }
     }
-    */
-
+    
+    printf("\n");
     printf("Hash anterior: ");
     printHash(blocoN->hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
     printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
-    printf("\nNonce: %d\n", blocoN->nonce);
+    printf("Nonce: %d\n", blocoN->nonce);
     printf("Minerador: %u\n", blocoN->data[183]);
     printf("lista de enderecos com BTC: ");
     mostraLista(enderecosComBTC);
+    printf("\n================================\n");
     //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
     
   }
