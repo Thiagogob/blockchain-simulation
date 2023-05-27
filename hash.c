@@ -478,6 +478,38 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
 
 //-------------------------------------------------------------------------------------------------------------------
 
+// Função para imprimir o endereço que minerou mais blocos
+void imprimirEnderecoMaisMinerou(listaBTC *enderecosComBTC)
+{
+    // Array para contar o número de blocos minerados por endereço
+    int contadorEnderecos[256] = {0};
+
+    // Percorrer a lista de endereços e contar os blocos minerados por cada endereço
+    listaBTC *tmp = enderecosComBTC;
+    while (tmp != NULL)
+    {
+        contadorEnderecos[tmp->endereco]++;
+        tmp = tmp->next;
+    }
+
+    // Encontrar o endereço que minerou mais blocos
+    unsigned int enderecoMaisMinerou = 0;
+    int maxBlocosMinerados = 0;
+    for (int i = 0; i < 256; i++)
+    {
+        if (contadorEnderecos[i] > maxBlocosMinerados)
+        {
+            enderecoMaisMinerou = i;
+            maxBlocosMinerados = contadorEnderecos[i];
+        }
+    }
+
+    // Imprimir o endereço que minerou mais blocos
+    printf("O endereço que minerou mais blocos é: %u\n", enderecoMaisMinerou);
+}
+
+//--------------------------------------------------------------------------------------------------------------------
+
 int main(int argc, char *argv[])
 {
   MTRand r = seedRand(1234567);
@@ -553,7 +585,7 @@ int main(int argc, char *argv[])
     printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
     //printf("lista de enderecos com BTC: ");
     //mostraLista(enderecosComBTC);
-    printf("\n================================\n");
+    //printf("\n================================\n");
     //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
     
   }
@@ -625,6 +657,7 @@ int main(int argc, char *argv[])
 
   //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
 
+  printf("\n-----------------------------------------------------------------\n\n");
   criarArquivoIndices(enderecosComBTC, "indices.txt");
   printf("Arquivo de ÍNDICES criado com sucesso.\n");
 
@@ -635,14 +668,14 @@ int main(int argc, char *argv[])
   criarArquivoBlocosMinerados(vetorBlocosMinerados, 16, "blocos_minerados.bin");
   //printf apenas para "validar" e verificar o funcionamento da função
   printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
-
+  printf("\n");
 
   //---------------------------------------------------------------------------------------------------------------------------
 
   int choice;
     do {
-        printf("Menu:\n");
-        printf("0. Inicializar todo o programa\n");
+        printf("--------------------------- MENU ---------------------------------------");
+        printf("\n0. Inicializar todo o programa\n");
         printf("1. Endereco com mais bitcoins\n");
         printf("2. Endereco que minerou mais blocos\n");
         printf("3. Bloco com mais transacoes\n");
@@ -663,7 +696,9 @@ int main(int argc, char *argv[])
 
                 }break;
             case 2:{
-
+                printf("\n");
+                imprimirEnderecoMaisMinerou(enderecosComBTC);
+                printf("\n");
                 }break;
             case 3:{
 
