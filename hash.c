@@ -214,7 +214,7 @@ void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *co
 
   if(tmp != NULL && tmp->endereco == endereco){
     *enderecosComBTC = tmp->next;
-    free(tmp);
+    //free(tmp);
     (*contador)--;
     return;
   }
@@ -226,7 +226,7 @@ void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *co
 
   if(tmp!=NULL){
     anterior->next = tmp->next;
-    free(tmp);
+    //free(tmp);
     (*contador)--;
   }
 
