@@ -391,6 +391,66 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
   return blocoNMinerado;
 }
 
+//----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
+void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "w");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de índices.\n");
+    return;
+  }
+
+  listaBTC *aux = inicio;
+  unsigned int posicao = 0;
+  while (aux != NULL)
+  {
+    fprintf(arquivo, "%u %u\n", aux->endereco, posicao);
+    aux = aux->next;
+    posicao++;
+  }
+
+  fclose(arquivo);
+}
+
+void criarArquivoIndicesNonce(BlocoMinerado *vetorBlocosMinerados, int tamanho, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "w");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de índices por nonce.\n");
+    return;
+  }
+
+  for (int i = 0; i < tamanho; i++)
+  {
+    fprintf(arquivo, "%d %u\n", i, vetorBlocosMinerados[i].bloco.nonce);
+  }
+
+  fclose(arquivo);
+}
+
+void criarArquivoBlocosMinerados(BlocoMinerado *blocos, int quantidade, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "wb");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de blocos minerados.\n");
+    return;
+  }
+
+  // Escreve a quantidade de blocos no arquivo
+  fwrite(&quantidade, sizeof(int), 1, arquivo);
+
+  // Escreve cada bloco no arquivo
+  fwrite(blocos, sizeof(BlocoMinerado), quantidade, arquivo);
+
+  fclose(arquivo);
+
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+
 int main(int argc, char *argv[])
 {
   MTRand r = seedRand(1234567);
@@ -544,5 +604,74 @@ int main(int argc, char *argv[])
   //mostraLista(enderecosComBTC);
 
   //printf("qtd elementos: %d", contador);
+
+    //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
+
+  criarArquivoIndices(enderecosComBTC, "indices.txt");
+  printf("Arquivo de ÍNDICES criado com sucesso.\n");
+
+  criarArquivoIndicesNonce(vetorBlocosMinerados, 16, "indices_nonce.txt");
+  printf("Arquivo de ÍNDICES NONCE criado com sucesso.\n");
+
+  //case 6 e 8 utilizarão o arquivo gerado nessa função
+  criarArquivoBlocosMinerados(vetorBlocosMinerados, 16, "blocos_minerados.bin");
+  //printf apenas para "validar" e verificar o funcionamento da função
+  printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
+
+  //---------------------------------------------------------------------------------------------------------------------------
+
+  int choice;
+    do {
+        printf("Menu:\n");
+        printf("0. Inicializar todo o programa\n");
+        printf("1. Endereco com mais bitcoins\n");
+        printf("2. Endereco que minerou mais blocos\n");
+        printf("3. Bloco com mais transacoes\n");
+        printf("4. Bloco com menos transacoes\n");
+        printf("5. Quantidade media de bitcoins por bloco\n");
+        printf("6. Imprimir campos de um bloco\n");
+        printf("7. Imprimir campos dos primeiros blocos de um endereco\n");
+        printf("8. Imprimir campos dos primeiros blocos em ordem crescente de transacoes\n");
+        printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 0:{
+                
+                }break;
+            case 1:{
+
+                }break;
+            case 2:{
+
+                }break;
+            case 3:{
+
+                }break;
+            case 4:{
+
+                }break;
+            case 5:{
+
+                }break;
+            case 6:{
+
+                }break;
+            case 7:{
+
+                }break;
+            case 8:{
+
+                }break;
+            case 9:{
+
+                }break;
+            default:
+                printf("Opcao invalida.\n");
+                break;
+        }
+    } while(choice != 0);
+
   return 0;
 }
