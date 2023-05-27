@@ -160,15 +160,15 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
 
   // Agora que o bloco foi minerado
   // Vamos passar ele para a struct de bloco minerado
-  BlocoMinerado *blocoGenesisMinerado = malloc(sizeof(BlocoMinerado));
+  BlocoMinerado blocoGenesisMinerado;
 
   // os campos do bloco nao minerado sao enviados para o bloco minerado
-  blocoGenesisMinerado->bloco = *blocoGenesis;
+  blocoGenesisMinerado.bloco = *blocoGenesis;
 
   // passando o hash que valida o bloco para a struct de bloco minerado
   for (int i = 0; i < SHA256_DIGEST_LENGTH; i++)
   {
-    blocoGenesisMinerado->hash[i] = hash[i];
+    blocoGenesisMinerado.hash[i] = hash[i];
   }
 
   /*
@@ -191,7 +191,7 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   //mostraLista(*enderecosComBTC);
   // printf("contador: %d\n", *contador);
 
-  return *blocoGenesisMinerado;
+  return blocoGenesisMinerado;
 }
 
 //funcao para procurar um endereco de destino na lista de quem tem BTC
@@ -299,7 +299,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
       j++;
 
       // definir quantidade de bitcoins
-      unsigned char qtdBTC = genRandLong(r) % carteira[endOrigem];
+      unsigned char qtdBTC = genRandLong(r) % (carteira[endOrigem]+1);
       blocoN->data[(i * 3) + j] = qtdBTC;
 
       //atualizando carteira para nao haver inconsistencia
@@ -316,9 +316,9 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
 
 }
 
-BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, listaBTC **enderecosComBTC, int *contador, unsigned char qtdTransacoes){
+BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, listaBTC **enderecosComBTC, int *contador, unsigned char qtdTransacoes){
 
-  BlocoMinerado* blocoNMinerado = malloc(sizeof(BlocoMinerado));
+  BlocoMinerado blocoNMinerado;
 
   
   unsigned char hash[SHA256_DIGEST_LENGTH];
@@ -336,7 +336,7 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
 
   //preenchendo campo hash do bloco minerado com o hash valido
   for(int i =0; i<SHA256_DIGEST_LENGTH; i++){
-    blocoNMinerado->hash[i] = hash[i];
+    blocoNMinerado.hash[i] = hash[i];
   }
 
   //atribuindo as 50 BTC para o minerador do bloco
@@ -351,7 +351,7 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
   
 
   //repassando campos do blocoN nao minerado
-  blocoNMinerado->bloco = *blocoN;
+  blocoNMinerado.bloco = *blocoN;
 
   //atualizando a carteira apos validada as transacoes
   for(int i=0; i<qtdTransacoes;i++){
@@ -391,14 +391,77 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
   return blocoNMinerado;
 }
 
+
+
+
+//----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
+void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "w");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de índices.\n");
+    return;
+  }
+
+  listaBTC *aux = inicio;
+  unsigned int posicao = 0;
+  while (aux != NULL)
+  {
+    fprintf(arquivo, "%u %u\n", aux->endereco, posicao);
+    aux = aux->next;
+    posicao++;
+  }
+
+  fclose(arquivo);
+}
+
+void criarArquivoIndicesNonce(BlocoMinerado *vetorBlocosMinerados, int tamanho, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "w");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de índices por nonce.\n");
+    return;
+  }
+
+  for (int i = 0; i < tamanho; i++)
+  {
+    fprintf(arquivo, "%d %u\n", i, vetorBlocosMinerados[i].bloco.nonce);
+  }
+
+  fclose(arquivo);
+}
+
+void criarArquivoBlocosMinerados(BlocoMinerado *blocos, int quantidade, const char *nomeArquivo)
+{
+  FILE *arquivo = fopen(nomeArquivo, "wb");
+  if (arquivo == NULL)
+  {
+    printf("Erro ao criar o arquivo de blocos minerados.\n");
+    return;
+  }
+
+  // Escreve a quantidade de blocos no arquivo
+  fwrite(&quantidade, sizeof(int), 1, arquivo);
+
+  // Escreve cada bloco no arquivo
+  fwrite(blocos, sizeof(BlocoMinerado), quantidade, arquivo);
+
+  fclose(arquivo);
+
+}
+
+//-------------------------------------------------------------------------------------------------------------------
+
 int main(int argc, char *argv[])
 {
   MTRand r = seedRand(1234567);
   int contador = 0;
   // instanciando e preenchendo bloco genesis
   // da maneira solicitada no enunciado
-  BlocoNaoMinerado *blocoGenesis = malloc(sizeof(BlocoNaoMinerado));
-  preencheBlocoGenesis(blocoGenesis);
+  BlocoNaoMinerado blocoGenesis;
+  preencheBlocoGenesis(&blocoGenesis);
 
   // inicializando carteira conforme pedido no enunciado
   unsigned int carteira[256];
@@ -413,33 +476,33 @@ int main(int argc, char *argv[])
   BlocoMinerado vetorBlocosMinerados[16];
 
   // minerando o bloco genesis
-  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
+  BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
   // Minerar 30.000 blocos agora
-  for (int i = 0; i < 100; i++)
+  for (int i = 0; i < 3; i++)
   {
 
-    BlocoNaoMinerado *blocoN = malloc(sizeof(BlocoNaoMinerado));
+    BlocoNaoMinerado blocoN;
 
     // decidindo quantidade de transacoes no bloco
     unsigned char qtdTransacoes = genRandLong(&r) % 62;
 
     if(i==0){
       vetorBlocosMinerados[0] = blocoGenesisMinerado;
-      inicializarBloco(vetorBlocosMinerados[0].hash, blocoN, 2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
+      inicializarBloco(vetorBlocosMinerados[0].hash, &blocoN, 2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
     }
     else{
-      inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, blocoN, i+2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
+      inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, &blocoN, i+2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
     }
 
-    BlocoMinerado *blocoNMinerado = minerarBloco(blocoN, carteira, &enderecosComBTC, &contador, qtdTransacoes);
+    BlocoMinerado blocoNMinerado = minerarBloco(&blocoN, carteira, &enderecosComBTC, &contador, qtdTransacoes);
 
-    vetorBlocosMinerados[i%16] = *blocoNMinerado;
+    vetorBlocosMinerados[i%16] = blocoNMinerado;
 
     printf("\nTRANSACOES\n");
     for (int i = 0; i < 184; i++)
     {
-      printf("[%u] - ", blocoN->data[i]);
+      printf("[%u] - ", blocoN.data[i]);
       if ((i + 1) % 3 == 0)
       {
         printf("\n");
@@ -448,11 +511,11 @@ int main(int argc, char *argv[])
     
     printf("\n");
     printf("Hash anterior: ");
-    printHash(blocoN->hashAnterior, SHA256_DIGEST_LENGTH);
+    printHash(blocoN.hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
-    printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
-    printf("Nonce: %d\n", blocoN->nonce);
-    printf("Minerador: %u\n", blocoN->data[183]);
+    printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
+    printf("Nonce: %d\n", blocoN.nonce);
+    printf("Minerador: %u\n", blocoN.data[183]);
     //printf("lista de enderecos com BTC: ");
     //mostraLista(enderecosComBTC);
     printf("\n================================\n");
@@ -498,26 +561,6 @@ int main(int argc, char *argv[])
 
   // MTRand r = seedRand(1234567);
   /*
-  unsigned char vetorLoco[9];
-  for (int i = 0; i < 3; i++)
-  {
-    for (int j = 0; j < 3; j++)
-    {
-
-      unsigned char endO = genRandLong(&r) % 256;
-      printf("endereco de origem: %u\n", endO);
-      vetorLoco[(i * 3) + j] = endO;
-      j++;
-
-      unsigned char endD = genRandLong(&r) % 256;
-      printf("endereco de destino: %u\n", endD);
-      vetorLoco[(i * 3) + j] = endD;
-      j++;
-
-      printf("quantidade de BTC: %u\n", 50);
-      vetorLoco[(i * 3) + j] = 50;
-    }
-  }
   */
   /*
   for (int i = 0; i < 15; i++)
@@ -544,5 +587,75 @@ int main(int argc, char *argv[])
   //mostraLista(enderecosComBTC);
 
   //printf("qtd elementos: %d", contador);
+
+    //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
+
+  criarArquivoIndices(enderecosComBTC, "indices.txt");
+  printf("Arquivo de ÍNDICES criado com sucesso.\n");
+
+  criarArquivoIndicesNonce(vetorBlocosMinerados, 16, "indices_nonce.txt");
+  printf("Arquivo de ÍNDICES NONCE criado com sucesso.\n");
+
+  //case 6 e 8 utilizarão o arquivo gerado nessa função
+  criarArquivoBlocosMinerados(vetorBlocosMinerados, 16, "blocos_minerados.bin");
+  //printf apenas para "validar" e verificar o funcionamento da função
+  printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
+
+  //---------------------------------------------------------------------------------------------------------------------------
+
+  int choice;
+    do {
+        printf("Menu:\n");
+        printf("0. Inicializar todo o programa\n");
+        printf("1. Endereco com mais bitcoins\n");
+        printf("2. Endereco que minerou mais blocos\n");
+        printf("3. Bloco com mais transacoes\n");
+        printf("4. Bloco com menos transacoes\n");
+        printf("5. Quantidade media de bitcoins por bloco\n");
+        printf("6. Imprimir campos de um bloco\n");
+        printf("7. Imprimir campos dos primeiros blocos de um endereco\n");
+        printf("8. Imprimir campos dos primeiros blocos em ordem crescente de transacoes\n");
+        printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
+        printf("Escolha uma opcao: ");
+        scanf("%d", &choice);
+
+        switch(choice) {
+            case 0:{
+                
+                }break;
+            case 1:{
+
+                }break;
+            case 2:{
+
+                }break;
+            case 3:{
+
+                }break;
+            case 4:{
+
+                }break;
+            case 5:{
+
+                }break;
+            case 6:{
+
+                }break;
+            case 7:{
+
+                }break;
+            case 8:{
+
+                }break;
+            case 9:{
+
+                }break;
+            default:
+                printf("Opcao invalida.\n");
+                break;
+        }
+    } while(choice != 0);
+
+
   return 0;
 }
