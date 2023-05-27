@@ -51,7 +51,7 @@ listaBTC *criaNo(unsigned int endereco)
 void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
 {
   listaBTC *novoEndereco = criaNo(endereco);
-  if (inicio == NULL)
+  if (*inicio == NULL)
   {
     *inicio = novoEndereco;
   }
