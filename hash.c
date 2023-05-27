@@ -510,12 +510,13 @@ int main(int argc, char *argv[])
     }
     
     printf("\n");
+    printf("Bloco: %d\n", blocoN.numero);
+    printf("Nonce: %d\n", blocoN.nonce);
+    printf("Minerador: %u\n", blocoN.data[183]);
     printf("Hash anterior: ");
     printHash(blocoN.hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
     printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
-    printf("Nonce: %d\n", blocoN.nonce);
-    printf("Minerador: %u\n", blocoN.data[183]);
     //printf("lista de enderecos com BTC: ");
     //mostraLista(enderecosComBTC);
     printf("\n================================\n");
