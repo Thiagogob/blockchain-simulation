@@ -531,6 +531,16 @@ void imprimirEnderecoMaisMinerou(listaBTC *enderecosComBTC)
 }
 
 //--------------------------------------------------------------------------------------------------------------------
+//função para imprimir o conteúdo da carteira, mas é apenas teste, depois será excluída
+void imprimirCarteira(unsigned int *carteira) {
+  for (int i = 0; i < 256; i++) {
+    if (carteira[i] > 0) {
+      printf("Endereço %d: %u BTC\n", i, carteira[i]);
+    }
+  }
+}
+
+//--------------------------------------------------------------------------------------------------------------------
 
 int main(int argc, char *argv[])
 {
@@ -707,6 +717,8 @@ int main(int argc, char *argv[])
         printf("7. Imprimir campos dos primeiros blocos de um endereco\n");
         printf("8. Imprimir campos dos primeiros blocos em ordem crescente de transacoes\n");
         printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
+        //criando um case 10, só pra testar e verificar algumas coisas sobre a carteira
+        printf("10. Imprimir carteira\n");
         printf("Escolha uma opcao: ");
         scanf("%d", &choice);
 
@@ -742,6 +754,11 @@ int main(int argc, char *argv[])
                 }break;
             case 9:{
 
+                }break;
+          case 10:{
+              printf("\n->> CONTEÚDO DA CARTEIRA:\n");
+              imprimirCarteira(carteira);
+              printf("\n");
                 }break;
             default:
                 printf("Opcao invalida.\n");
