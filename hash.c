@@ -63,6 +63,18 @@ void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
   }
 }
 
+//essa funcao serve para verificar se o minerador pode entrar na lista
+//pois nao eh interessante a repeticao de enderecos na lista
+int verificaSeMineradorPodeEntrarNaLista(listaBTC* enderecosComBTC, unsigned int endereco){
+  listaBTC *tmp = enderecosComBTC;
+  while(tmp !=NULL){
+    if(tmp->endereco == endereco){
+      return 0;
+    }
+    tmp = tmp->next;
+  }
+  return 1;
+}
 
 //Funcao para printar a lista
 void mostraLista(listaBTC *inicio)
@@ -333,7 +345,10 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
 
   //inserindo minerador na lista dos que tem BTC
   //(necessario rever, mesmo endereco pode estar sendo colocado duas vezes)
-  insereNoInicio(enderecosComBTC, minerador, contador);
+  if(verificaSeMineradorPodeEntrarNaLista(*enderecosComBTC, minerador)){
+    insereNoInicio(enderecosComBTC, minerador, contador);
+  }
+  
 
   //repassando campos do blocoN nao minerado
   blocoNMinerado->bloco = *blocoN;
@@ -350,7 +365,9 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
         carteira[blocoN->data[(i*3)+1]] += blocoN->data[(i*3)+2];
 
         if(blocoN->data[(i*3)+2] != 0){
-          insereNoInicio(enderecosComBTC, blocoN->data[(i*3)+1], contador);
+          if(verificaSeMineradorPodeEntrarNaLista(*enderecosComBTC, blocoN->data[(i*3)+1])){
+            insereNoInicio(enderecosComBTC, blocoN->data[(i*3)+1], contador);
+          }
         }
       }
 
@@ -424,7 +441,7 @@ int main(int argc, char *argv[])
 
   }
   */
-  for (int i = 0; i < 1; i++)
+  for (int i = 0; i < 3; i++)
   {
 
     BlocoNaoMinerado *blocoN = malloc(sizeof(BlocoNaoMinerado));
@@ -444,6 +461,7 @@ int main(int argc, char *argv[])
 
     vetorBlocosMinerados[i%16] = *blocoNMinerado;
 
+    /*
     for (int i = 0; i < 184; i++)
     {
       printf("[%u] - ", blocoN->data[i]);
@@ -452,6 +470,8 @@ int main(int argc, char *argv[])
         printf("\n");
       }
     }
+    */
+
     printf("Hash anterior: ");
     printHash(blocoN->hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
@@ -460,6 +480,7 @@ int main(int argc, char *argv[])
     printf("Minerador: %u\n", blocoN->data[183]);
     printf("lista de enderecos com BTC: ");
     mostraLista(enderecosComBTC);
+    //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
     
   }
   /*
