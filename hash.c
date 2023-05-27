@@ -542,7 +542,7 @@ int main(int argc, char *argv[])
     }
     */
     
-    /*
+    
     printf("\n");
     printf("Bloco: %d\n", blocoN.numero);
     printf("Nonce: %d\n", blocoN.nonce);
@@ -555,7 +555,7 @@ int main(int argc, char *argv[])
     //mostraLista(enderecosComBTC);
     printf("\n================================\n");
     //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
-    */
+    
   }
   /*
   printf("carteira[136]: %u\n", carteira[136]);
