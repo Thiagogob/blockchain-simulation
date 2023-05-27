@@ -478,7 +478,7 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
 
 //-------------------------------------------------------------------------------------------------------------------
 
-// Função para imprimir o endereço que minerou mais blocos
+/// Função para imprimir o endereço que minerou mais blocos
 void imprimirEnderecoMaisMinerou(listaBTC *enderecosComBTC)
 {
     // Array para contar o número de blocos minerados por endereço
@@ -495,17 +495,39 @@ void imprimirEnderecoMaisMinerou(listaBTC *enderecosComBTC)
     // Encontrar o endereço que minerou mais blocos
     unsigned int enderecoMaisMinerou = 0;
     int maxBlocosMinerados = 0;
+    int empate = 0;
+
     for (int i = 0; i < 256; i++)
     {
         if (contadorEnderecos[i] > maxBlocosMinerados)
         {
             enderecoMaisMinerou = i;
             maxBlocosMinerados = contadorEnderecos[i];
+            empate = 0;
+        }
+        else if (contadorEnderecos[i] == maxBlocosMinerados)
+        {
+            empate = 1;
         }
     }
 
-    // Imprimir o endereço que minerou mais blocos
-    printf("O endereço que minerou mais blocos é: %u\n", enderecoMaisMinerou);
+    // Imprimir o endereço que minerou mais blocos ou os endereços em caso de empate
+    if (empate)
+    {
+        printf("\nHouve um empate na contagem de blocos minerados entre os seguintes endereços:\n");
+        for (int i = 0; i < 256; i++)
+        {
+            if (contadorEnderecos[i] == maxBlocosMinerados)
+            {
+                printf("\nEndereço: %u ", i);
+            }
+        }
+        printf("\n\n->>>Todos os endereços listados acima mineraram %d bloco(s)", maxBlocosMinerados);
+    }
+    else
+    {
+        printf("O endereço que minerou mais blocos é: %u - Quantidade de vezes minerado: %d\n", enderecoMaisMinerou, maxBlocosMinerados);
+    }
 }
 
 //--------------------------------------------------------------------------------------------------------------------
