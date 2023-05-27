@@ -99,6 +99,13 @@ void printHash(unsigned char hash[], int length)
   printf("\n");
 }
 
+void printarHashArquivo(FILE *pArq, unsigned char* hash){
+  const char* FORMATO_BLOCO_MINERADO_HASH = "%02x";
+  for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
+    fprintf(pArq, FORMATO_BLOCO_MINERADO_HASH, hash[i]);
+  }
+}
+
 //funcao para preencher o bloco genesis com os campos
 //solicitados no enunciado do projeto
 void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis)
@@ -119,6 +126,7 @@ void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis)
   // COLOCANDO A FRASE DO BLOCO GÊNESIS
   char *str = "The Times 03/Jan/2009 Chancellor on brink of second bailout for banks";
   strcpy(blocoGenesis->data, str);
+  
 
   // DEFININDO NONCE COMO 0 E NUMERO DO BLOCO COMO 1, COMO DITO NO ENUNCIADO
   blocoGenesis->nonce = 0;
@@ -463,6 +471,12 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
   }
   for(int i=0; i<16; i++){
     fprintf(pArqTexto, FORMATO_BLOCO_MINERADO, vetorBlocosMinerados[i].bloco.numero, vetorBlocosMinerados[i].bloco.nonce, vetorBlocosMinerados[i].bloco.data[183]);
+    fprintf(pArqTexto, "Hash anterior: ");
+    printarHashArquivo(pArqTexto, vetorBlocosMinerados[i].bloco.hashAnterior);
+    fprintf(pArqTexto, "\n");
+    fprintf(pArqTexto, "Hash valido: ");
+    printarHashArquivo(pArqTexto, vetorBlocosMinerados[i].hash);
+    fprintf(pArqTexto, "\n");
     for(unsigned char j=0; j<184; j++){
       fprintf(pArqTexto, FORMATO_BLOCO_MINERADO_DATA, vetorBlocosMinerados[i].bloco.data[j]);
       
@@ -472,6 +486,40 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
       
     }
     fprintf(pArqTexto, "\n=======================================");
+  }
+  fclose(pArqTexto);
+}
+
+void escreverArquivoTextoComGenesis(BlocoMinerado *vetorBlocosMinerados){
+  const char* FORMATO_BLOCO_MINERADO = "Bloco: %d\nNonce: %d\nMinerador: %u\n";
+  const char* FORMATO_BLOCO_MINERADO_DATA = "[%u] -";
+  const char* FORMATO_BLOCO_MINERADO_DATA_GENESIS = "%c";
+  FILE *pArqTexto = fopen("blocos_minerados.txt", "a+");
+  if (pArqTexto == NULL)
+  {
+    printf("Erro ao criar/abrir arquivo texto de blocos minerados.\n");
+    return;
+  }
+  for(int i=0; i<16; i++){
+    fprintf(pArqTexto, FORMATO_BLOCO_MINERADO, vetorBlocosMinerados[i].bloco.numero, vetorBlocosMinerados[i].bloco.nonce, vetorBlocosMinerados[i].bloco.data[183]);
+    fprintf(pArqTexto, "Hash anterior: ");
+    printarHashArquivo(pArqTexto, vetorBlocosMinerados[i].bloco.hashAnterior);
+    fprintf(pArqTexto, "\n");
+    fprintf(pArqTexto, "Hash valido: ");
+    printarHashArquivo(pArqTexto, vetorBlocosMinerados[i].hash);
+    fprintf(pArqTexto, "\n");
+    for(unsigned char j=0; j<184; j++){
+      if(i==0){
+        fprintf(pArqTexto, FORMATO_BLOCO_MINERADO_DATA_GENESIS, vetorBlocosMinerados[i].bloco.data[j]);
+      }
+      else{
+        fprintf(pArqTexto, FORMATO_BLOCO_MINERADO_DATA, vetorBlocosMinerados[i].bloco.data[j]);
+        if((j+1)%3==0){
+          fprintf(pArqTexto, "\n");
+        }
+      }
+    }
+    fprintf(pArqTexto, "\n=======================================\n");
   }
   fclose(pArqTexto);
 }
@@ -550,7 +598,7 @@ int main(int argc, char *argv[])
   // da maneira solicitada no enunciado
   BlocoNaoMinerado blocoGenesis;
   preencheBlocoGenesis(&blocoGenesis);
-  printf("oi pedro");
+
   // inicializando carteira conforme pedido no enunciado
   unsigned int carteira[256];
   inicializaCarteira(carteira);
@@ -566,31 +614,45 @@ int main(int argc, char *argv[])
   // minerando o bloco genesis
   BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
+  vetorBlocosMinerados[0] = blocoGenesisMinerado;
+  unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
-  for (int i = 0; i < 18; i++)
+  for (int i = 0; i < 46; i++)
   {
 
     BlocoNaoMinerado blocoN;
+    
 
     // decidindo quantidade de transacoes no bloco
     unsigned char qtdTransacoes = genRandLong(&r) % 62;
 
     if(i==0){
-      vetorBlocosMinerados[0] = blocoGenesisMinerado;
-      inicializarBloco(vetorBlocosMinerados[0].hash, &blocoN, 2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
+      inicializarBloco(blocoGenesisMinerado.hash, &blocoN, 2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
     }
     else{
-      inicializarBloco(vetorBlocosMinerados[(i-1)%16].hash, &blocoN, i+2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
+
+      inicializarBloco(hashAnterior, &blocoN, i+2, &r, &contador, enderecosComBTC, carteira, qtdTransacoes);
     }
 
     BlocoMinerado blocoNMinerado = minerarBloco(&blocoN, carteira, &enderecosComBTC, &contador, qtdTransacoes);
 
-    vetorBlocosMinerados[i%16] = blocoNMinerado;
 
+    
+    vetorBlocosMinerados[(i+1)%16] = blocoNMinerado;
+    
+    
+    for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
+      hashAnterior[i]=blocoNMinerado.hash[i];
+    }
     //printf("i: %d\n", i);
+
     //verificando se eh para escrever no arquivo
-    if((i+1)%16==0){
+    if((i+1)%15==0 && i==14){
       //printf("\nta na hora de escrever no arquivo\n");
+      escreverArquivoTextoComGenesis(vetorBlocosMinerados);
+    }
+    else if((i)%15==0 && i!=15 && i!=0){
+      //printf("\nvalor do i: %d\n", i);
       escreverArquivoTexto(vetorBlocosMinerados);
     }
 
