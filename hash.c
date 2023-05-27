@@ -416,7 +416,7 @@ int main(int argc, char *argv[])
   BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
   // Minerar 30.000 blocos agora
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 100; i++)
   {
 
     BlocoNaoMinerado *blocoN = malloc(sizeof(BlocoNaoMinerado));
@@ -453,8 +453,8 @@ int main(int argc, char *argv[])
     printHash(blocoNMinerado->hash, SHA256_DIGEST_LENGTH);
     printf("Nonce: %d\n", blocoN->nonce);
     printf("Minerador: %u\n", blocoN->data[183]);
-    printf("lista de enderecos com BTC: ");
-    mostraLista(enderecosComBTC);
+    //printf("lista de enderecos com BTC: ");
+    //mostraLista(enderecosComBTC);
     printf("\n================================\n");
     //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
     
