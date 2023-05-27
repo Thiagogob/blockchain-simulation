@@ -257,7 +257,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   }
 
   
-  printf("Quantidade de transacoes no bloco: %u\n", qtdTransacoes);
+  //printf("Quantidade de transacoes no bloco: %u\n", qtdTransacoes);
   // definindo os elementos das transacoes
   if(numeroBloco == 2){
     for(int i=0; i<qtdTransacoes; i++){
@@ -452,6 +452,30 @@ void criarArquivoBlocosMinerados(BlocoMinerado *blocos, int quantidade, const ch
 
 }
 
+void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
+  const char* FORMATO_BLOCO_MINERADO = "\nBloco: %d\nNonce: %d\nMinerador: %u\n";
+  const char* FORMATO_BLOCO_MINERADO_DATA = "[%u] -";
+  FILE *pArqTexto = fopen("blocos_minerados.txt", "a+");
+  if (pArqTexto == NULL)
+  {
+    printf("Erro ao criar/abrir arquivo texto de blocos minerados.\n");
+    return;
+  }
+  for(int i=0; i<16; i++){
+    fprintf(pArqTexto, FORMATO_BLOCO_MINERADO, vetorBlocosMinerados[i].bloco.numero, vetorBlocosMinerados[i].bloco.nonce, vetorBlocosMinerados[i].bloco.data[183]);
+    for(unsigned char j=0; j<184; j++){
+      fprintf(pArqTexto, FORMATO_BLOCO_MINERADO_DATA, vetorBlocosMinerados[i].bloco.data[j]);
+      
+      if((j+1)%3==0){
+        fprintf(pArqTexto, "\n");
+      }
+      
+    }
+    fprintf(pArqTexto, "\n=======================================");
+  }
+  fclose(pArqTexto);
+}
+
 //-------------------------------------------------------------------------------------------------------------------
 
 int main(int argc, char *argv[])
@@ -479,7 +503,7 @@ int main(int argc, char *argv[])
   BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
 
   // Minerar 30.000 blocos agora
-  for (int i = 0; i < 3; i++)
+  for (int i = 0; i < 18; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -499,6 +523,14 @@ int main(int argc, char *argv[])
 
     vetorBlocosMinerados[i%16] = blocoNMinerado;
 
+    //printf("i: %d\n", i);
+    //verificando se eh para escrever no arquivo
+    if((i+1)%16==0){
+      //printf("\nta na hora de escrever no arquivo\n");
+      escreverArquivoTexto(vetorBlocosMinerados);
+    }
+
+    /*
     printf("\nTRANSACOES\n");
     for (int i = 0; i < 184; i++)
     {
@@ -508,7 +540,9 @@ int main(int argc, char *argv[])
         printf("\n");
       }
     }
+    */
     
+    /*
     printf("\n");
     printf("Bloco: %d\n", blocoN.numero);
     printf("Nonce: %d\n", blocoN.nonce);
@@ -521,7 +555,7 @@ int main(int argc, char *argv[])
     //mostraLista(enderecosComBTC);
     printf("\n================================\n");
     //printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
-    
+    */
   }
   /*
   printf("carteira[136]: %u\n", carteira[136]);
@@ -589,7 +623,7 @@ int main(int argc, char *argv[])
 
   //printf("qtd elementos: %d", contador);
 
-    //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
+  //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
 
   criarArquivoIndices(enderecosComBTC, "indices.txt");
   printf("Arquivo de ÍNDICES criado com sucesso.\n");
@@ -601,6 +635,7 @@ int main(int argc, char *argv[])
   criarArquivoBlocosMinerados(vetorBlocosMinerados, 16, "blocos_minerados.bin");
   //printf apenas para "validar" e verificar o funcionamento da função
   printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
+
 
   //---------------------------------------------------------------------------------------------------------------------------
 
