@@ -23,12 +23,16 @@ typedef struct BlocoMinerado
   unsigned char hash[SHA256_DIGEST_LENGTH];
 } BlocoMinerado;
 
+
+//lista que vai conter os enderecos que possuem BTC
 typedef struct listaBTC
 {
   unsigned int endereco;
   struct listaBTC *next;
 } listaBTC;
 
+
+//Funcao para criar um no na lista dos enderecos que tem BTC
 listaBTC *criaNo(unsigned int endereco)
 {
   listaBTC *novoEndereco = (listaBTC *)malloc(sizeof(listaBTC));
@@ -42,6 +46,8 @@ listaBTC *criaNo(unsigned int endereco)
   return novoEndereco;
 }
 
+
+//Funcao para inserir um endereco na lista dos que tem BTC
 void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
 {
   listaBTC *novoEndereco = criaNo(endereco);
@@ -57,6 +63,8 @@ void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
   }
 }
 
+
+//Funcao para printar a lista
 void mostraLista(listaBTC *inicio)
 {
   listaBTC *aux = inicio;
@@ -68,6 +76,7 @@ void mostraLista(listaBTC *inicio)
   printf("\n");
 }
 
+//printar hash
 void printHash(unsigned char hash[], int length)
 {
   int i;
@@ -78,14 +87,8 @@ void printHash(unsigned char hash[], int length)
   printf("\n");
 }
 
-/*
-unsigned char gerarNumeroAleatorio(int valorMaximo){
-    MTRand r = seedRand(1234567);
-    unsigned char numeroAleatorio = genRandLong(&r)%valorMaximo;
-    return numeroAleatorio;
-}
-*/
-
+//funcao para preencher o bloco genesis com os campos
+//solicitados no enunciado do projeto
 void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis)
 {
 
@@ -110,6 +113,7 @@ void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis)
   blocoGenesis->numero = 1;
 }
 
+//inicializar a carteira do projeto com zeros
 void inicializaCarteira(unsigned int *carteira)
 {
   for (int i = 0; i < 256; i++)
@@ -118,6 +122,7 @@ void inicializaCarteira(unsigned int *carteira)
   }
 }
 
+//funcao para minerar bloco genesis
 BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira, listaBTC **enderecosComBTC, MTRand *r, int *contador)
 {
 
@@ -128,8 +133,13 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   unsigned char minerador = genRandLong(r) % 256;
   blocoGenesis->data[183] = minerador;
 
+  //gerando um 1° hash para o bloco
   SHA256((unsigned char *)blocoGenesis, sizeof(BlocoNaoMinerado), hash);
 
+  //gerando um novo hash e atualizando o nonce
+  //ate que hajam 2 zeros hexadecimais no comeco
+  //esse eh o criterio para validar um hash
+  //assim sabemos se um bloco foi minerado
   while (hash[0] != 0)
   {
     blocoGenesis->nonce++;
@@ -172,6 +182,7 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
   return *blocoGenesisMinerado;
 }
 
+//funcao para procurar um endereco de destino na lista de quem tem BTC
 unsigned char procuraEnderecoDestino(listaBTC *enderecosComBTC, int indice)
 {
   listaBTC *tmp = enderecosComBTC;
@@ -182,6 +193,8 @@ unsigned char procuraEnderecoDestino(listaBTC *enderecosComBTC, int indice)
   return tmp->endereco;
 }
 
+//funcao para remover um endereco
+//usada caso algum endereco que tinha BTC tenha transferido todas que tinha
 void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *contador){
 
   listaBTC *tmp = *enderecosComBTC;
@@ -296,28 +309,36 @@ BlocoMinerado* minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, li
   BlocoMinerado* blocoNMinerado = malloc(sizeof(BlocoMinerado));
 
   
-
   unsigned char hash[SHA256_DIGEST_LENGTH];
 
+  //gerando um hash para o bloco
   SHA256((unsigned char *)blocoN, sizeof(BlocoNaoMinerado), hash);
 
+
+  //alterando hash e nonce ate
+  //o hash ser valido
   while(hash[0]!=0){
     blocoN->nonce++;
     SHA256((unsigned char *)blocoN, sizeof(BlocoNaoMinerado), hash);
   }
 
+  //preenchendo campo hash do bloco minerado com o hash valido
   for(int i =0; i<SHA256_DIGEST_LENGTH; i++){
     blocoNMinerado->hash[i] = hash[i];
   }
 
+  //atribuindo as 50 BTC para o minerador do bloco
   unsigned char minerador = blocoN->data[183];
   carteira[minerador] += 50;
 
+  //inserindo minerador na lista dos que tem BTC
+  //(necessario rever, mesmo endereco pode estar sendo colocado duas vezes)
   insereNoInicio(enderecosComBTC, minerador, contador);
 
+  //repassando campos do blocoN nao minerado
   blocoNMinerado->bloco = *blocoN;
 
-  
+  //atualizando a carteira apos validada as transacoes
   for(int i=0; i<qtdTransacoes;i++){
     for(int j=0; j<3; j++){
 
