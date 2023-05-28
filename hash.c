@@ -613,11 +613,11 @@ int main(int argc, char *argv[])
 
   // minerando o bloco genesis
   BlocoMinerado blocoGenesisMinerado = minerarBlocoGenesis(&blocoGenesis, carteira, &enderecosComBTC, &r, &contador);
-
+  int constanteCorrecao=0;
   vetorBlocosMinerados[0] = blocoGenesisMinerado;
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
-  for (int i = 0; i < 46; i++)
+  for (int i = 0; i < 63; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -637,8 +637,8 @@ int main(int argc, char *argv[])
     BlocoMinerado blocoNMinerado = minerarBloco(&blocoN, carteira, &enderecosComBTC, &contador, qtdTransacoes);
 
 
-    
-    vetorBlocosMinerados[(i+1)%16] = blocoNMinerado;
+    int indice = (i+1)%16;
+    vetorBlocosMinerados[indice] = blocoNMinerado;
     
     
     for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
@@ -651,10 +651,16 @@ int main(int argc, char *argv[])
       //printf("\nta na hora de escrever no arquivo\n");
       escreverArquivoTextoComGenesis(vetorBlocosMinerados);
     }
-    else if((i)%15==0 && i!=15 && i!=0){
+    /*
+    else if((blocoN.numero-constanteCorrecao)%15==0 && i!=15 && i!=0){
       //printf("\nvalor do i: %d\n", i);
       escreverArquivoTexto(vetorBlocosMinerados);
+      constanteCorrecao++;
     }
+    */
+   else if(indice == 15){
+    escreverArquivoTexto(vetorBlocosMinerados);
+   }
 
     /*
     printf("\nTRANSACOES\n");
@@ -677,6 +683,7 @@ int main(int argc, char *argv[])
     printHash(blocoN.hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
     printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
+    
     //printf("lista de enderecos com BTC: ");
     //mostraLista(enderecosComBTC);
     //printf("\n================================\n");
