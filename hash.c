@@ -617,6 +617,7 @@ int main(int argc, char *argv[])
   vetorBlocosMinerados[0] = blocoGenesisMinerado;
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
+  //i=29999
   for (int i = 0; i < 63; i++)
   {
 
