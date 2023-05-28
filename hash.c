@@ -9,6 +9,10 @@
 #include "mtwister.c"
 #include <stdlib.h>
 
+#define HASH_TABLE_SIZE 60000
+
+//-------------------------------------------------------------------------------
+
 typedef struct BlocoNaoMinerado
 {
   unsigned int numero;
@@ -17,11 +21,15 @@ typedef struct BlocoNaoMinerado
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
 } BlocoNaoMinerado;
 
+//-------------------------------------------------------------------------------
+
 typedef struct BlocoMinerado
 {
   BlocoNaoMinerado bloco;
   unsigned char hash[SHA256_DIGEST_LENGTH];
 } BlocoMinerado;
+
+//-------------------------------------------------------------------------------
 
 // lista que vai conter os enderecos que possuem BTC
 typedef struct listaBTC
@@ -30,6 +38,13 @@ typedef struct listaBTC
   struct listaBTC *next;
 } listaBTC;
 
+//-------------------------------------------------------------------------------
+
+typedef struct TNoABP{
+    BlocoMinerado dadosBloco;
+    struct TNoABP* esq;
+    struct TNoABP* dir;
+}TNoABP;
 //-------------------------------------------------------------------------------
 
 // Funcao para criar um no na lista dos enderecos que tem BTC
@@ -121,6 +136,116 @@ void printarHashArquivo(FILE *pArq, unsigned char *hash)
 }
 
 //-------------------------------------------------------------------------------
+//---------------------------------FUNCOES ABP--------------------------------------------
+/*
+void criaNo(TNoABP** novoNo, BlocoMinerado dadosBloco) {
+    *novoNo = (TNoABP*)malloc(sizeof(TNoABP));
+    if(*novoNo == NULL){
+      printf("\nNao foi possivel alocar memoria para ABP\n");
+      return;
+    }
+    (*novoNo)->dadosBloco = dadosBloco;
+    (*novoNo)->esq = NULL;
+    (*novoNo)->dir = NULL;
+}
+*/
+//-------------------------------------------------------------------------------
+/*
+void inserirArvore(TNoABP** raiz, BlocoMinerado dadosBloco) {
+    TNoABP* newNode = criaNo(dadosBloco);
+
+    if (*raiz == NULL) {
+        *raiz = newNode;
+        return;
+    }
+
+    TNoABP* atual = *raiz;
+    TNoABP* pai = NULL;
+
+    while (atual != NULL) {
+        pai = atual;
+
+        if (dadosBloco.bloco.nonce < atual->dadosBloco.bloco.nonce)
+            atual = atual->esq;
+        else if (dadosBloco.bloco.nonce > atual->dadosBloco.bloco.nonce)
+            atual = atual->dir;
+        else {
+            // Handle duplicates if necessary
+            // Here, we are assuming duplicates are allowed and inserting to the esq
+            atual = atual->esq;
+        }
+    }
+
+    if (dadosBloco.bloco.nonce < pai->dadosBloco.bloco.nonce)
+        pai->esq = newNode;
+    else
+        pai->dir = newNode;
+}
+*/
+//---------------------------------QUICK SORT-----------------------------------------------------
+
+
+void troca(BlocoMinerado *a, BlocoMinerado *b){
+  BlocoMinerado tmp = *a;
+  *a = *b;
+  *b = tmp;
+}
+
+int partition(BlocoMinerado *vetorBlocosMinerados, int menor, int maior){
+  int pivot = vetorBlocosMinerados[maior].bloco.nonce;
+  int i = menor -1;
+
+  for(int j=menor; j<=maior; j++){
+    if(vetorBlocosMinerados[j].bloco.nonce < pivot){
+      i++;
+      troca(&vetorBlocosMinerados[i], &vetorBlocosMinerados[j]);
+    }
+  }
+
+  troca(&vetorBlocosMinerados[i+1], &vetorBlocosMinerados[maior]);
+  return(i+1);
+}
+
+void quickSort(BlocoMinerado *vetorBlocosMinerados, int menor, int maior){
+  if(menor < maior){
+    int pi = partition(vetorBlocosMinerados, menor, maior);
+    quickSort(vetorBlocosMinerados, menor, pi-1);
+    quickSort(vetorBlocosMinerados, pi + 1, maior);
+  }
+}
+
+
+//-------------------------------------------------------------------------------
+void insereNoIterativo(TNoABP **raiz, BlocoMinerado dadosBloco){
+    TNoABP *aux = *raiz;
+    while(aux){
+        if(dadosBloco.bloco.nonce <= aux->dadosBloco.bloco.nonce){
+            raiz = &aux->esq;
+        }
+        else{
+            raiz = &aux->dir;
+        }
+        aux = *raiz;
+    }
+    aux = malloc(sizeof(TNoABP));
+    aux->dadosBloco = dadosBloco;
+    aux->esq = NULL;
+    aux->dir = NULL;
+    *raiz = aux;
+}
+//-------------------------------------------------------------------------------
+
+void printEmOrdem(TNoABP* root) {
+    if (root != NULL) {
+        printEmOrdem(root->esq);
+        printf("Nonce: %d\nNumber: %d\n", root->dadosBloco.bloco.nonce, root->dadosBloco.bloco.numero);
+        printEmOrdem(root->dir);
+    }
+}
+
+
+//-------------------------------------------------------------------------------
+
 
 // funcao para preencher o bloco genesis com os campos
 // solicitados no enunciado do projeto
@@ -415,9 +540,31 @@ BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, lis
 
   return blocoNMinerado;
 }
-
 //---------------------------------------------------------------------------------------
-int binarySearch(BlocoMinerado *vetorBlocosMinerados, int menor, int maior, unsigned int numeroBlocoProcurado)
+  void printarDadosDeUmBloco(BlocoMinerado blocoMinerado){
+    printf("\n");
+      printf("=======================================\n");
+      printf("Bloco: %d\n", blocoMinerado.bloco.numero);
+      printf("Nonce: %d\n", blocoMinerado.bloco.nonce);
+      printf("Minerador: %u\n", blocoMinerado.bloco.data[183]);
+      printf("Hash anterior: ");
+      printHash(blocoMinerado.bloco.hashAnterior, SHA256_DIGEST_LENGTH);
+      printf("Hash valido: ");
+      printHash(blocoMinerado.hash, SHA256_DIGEST_LENGTH);
+
+      printf("\nTRANSACOES\n");
+      for (int i = 0; i < 184; i++)
+      {
+        printf("[%u] - ", blocoMinerado.bloco.data[i]);
+        if ((i + 1) % 3 == 0)
+        {
+          printf("\n");
+        }
+      }
+      printf("\n=======================================\n");
+  }
+//---------------------------------------------------------------------------------------
+int binarySearchBaseadoNoNumero(BlocoMinerado *vetorBlocosMinerados, int menor, int maior, unsigned int numeroBlocoProcurado)
 {
   while (menor <= maior)
   {
@@ -426,26 +573,7 @@ int binarySearch(BlocoMinerado *vetorBlocosMinerados, int menor, int maior, unsi
 
     if (vetorBlocosMinerados[meio].bloco.numero == numeroBlocoProcurado)
     {
-      printf("\n");
-      printf("=======================================\n");
-      printf("Bloco: %d\n", vetorBlocosMinerados[meio].bloco.numero);
-      printf("Nonce: %d\n", vetorBlocosMinerados[meio].bloco.nonce);
-      printf("Minerador: %u\n", vetorBlocosMinerados[meio].bloco.data[183]);
-      printf("Hash anterior: ");
-      printHash(vetorBlocosMinerados[meio].bloco.hashAnterior, SHA256_DIGEST_LENGTH);
-      printf("Hash valido: ");
-      printHash(vetorBlocosMinerados[meio].hash, SHA256_DIGEST_LENGTH);
-
-      printf("\nTRANSACOES\n");
-      for (int i = 0; i < 184; i++)
-      {
-        printf("[%u] - ", vetorBlocosMinerados[meio].bloco.data[i]);
-        if ((i + 1) % 3 == 0)
-        {
-          printf("\n");
-        }
-      }
-      printf("\n=======================================\n");
+      printarDadosDeUmBloco(vetorBlocosMinerados[meio]);
       return 1;
     }
     else if (vetorBlocosMinerados[meio].bloco.numero < numeroBlocoProcurado)
@@ -459,6 +587,50 @@ int binarySearch(BlocoMinerado *vetorBlocosMinerados, int menor, int maior, unsi
   }
   return -1;
 }
+//---------------------------------------------------------------------------------------------------------------
+
+int binarySearchBaseadoNonce(BlocoMinerado* arr, int menor,int maior, unsigned int target) {
+    int found = 0;
+
+    while (menor <= maior) {
+        int mid = menor + (maior - menor) / 2;
+
+        if (arr[mid].bloco.nonce == target) {
+            found = 1;
+            int left = mid - 1;
+            int right = mid + 1;
+            ;
+            // Print all occurrences of target towards left
+            while (left >= 0 && arr[left].bloco.nonce == target) {
+                printarDadosDeUmBloco(arr[left]);
+                left--;
+            }
+
+            printarDadosDeUmBloco(arr[mid]);  // Print the current occurrence
+
+            // Print all occurrences of target towards right
+            while (right < (maior+1) && arr[right].bloco.nonce == target) {
+
+                printarDadosDeUmBloco(arr[right]);
+                right++;
+            }
+
+            return 1;
+            break;
+        }
+
+        if (arr[mid].bloco.nonce < target)
+            menor = mid + 1;
+        else
+            maior = mid - 1;
+    }
+
+    if (!found)
+        printf("\nTarget not found!\n");
+
+    printf("\n");
+}
+
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
 void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
 {
@@ -520,6 +692,7 @@ void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeD
 
   fclose(arqBinario);
 }
+
 
 //-------------------------------------------------------------------------------
 
@@ -644,7 +817,36 @@ void procurarBlocoEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeD
   for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
   {
     fread(vetorBlocosMinerados, sizeof(BlocoMinerado), 16, arqBinario);
-    int flag = binarySearch(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    if(flag==1){
+      fclose(arqBinario);
+      return;
+    }
+  }
+
+  fclose(arqBinario);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void procurarNonceEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo, unsigned int nonceProcurado)
+{
+  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca\n");
+    return;
+  }
+  BlocoMinerado vetorBlocosMinerados[16];
+
+  // calculo para saber a quantidade de "chunks" escritas no arquivo
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
+
+  // se nao for multiplo de 16 haverao elementos restantes
+  int elementosRestantes = quantidadeDeElementosEscritosNoArquivo % 16;
+
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fread(vetorBlocosMinerados, sizeof(BlocoMinerado), 16, arqBinario);
+    int flag = binarySearchBaseadoNonce(vetorBlocosMinerados, 0, 15, nonceProcurado);
     if(flag==1){
       fclose(arqBinario);
       return;
@@ -725,7 +927,7 @@ int main(int argc, char *argv[])
 {
   MTRand r = seedRand(1234567);
   int contador = 0;
-
+  TNoABP *raizArvoreNonce = NULL;
   int quantidadeDeElementosEscritosNoArquivoBinario = 0;
   // instanciando e preenchendo bloco genesis
   // da maneira solicitada no enunciado
@@ -751,7 +953,7 @@ int main(int argc, char *argv[])
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
   // i=29999
-  for (int i = 0; i < 31; i++)
+  for (int i = 0; i < 15; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -785,7 +987,14 @@ int main(int argc, char *argv[])
     {
       escreverArquivoTextoComGenesis(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
+      quickSort(vetorBlocosMinerados, 0, 15);
+      escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
+      /*
+      for(int i=0; i<16; i++){
+        printarDadosDeUmBloco(vetorBlocosMinerados[i]);
+      }
+      */
     }
     /*
     else if((blocoN.numero-constanteCorrecao)%15==0 && i!=15 && i!=0){
@@ -798,6 +1007,8 @@ int main(int argc, char *argv[])
     {
       escreverArquivoTexto(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
+      quickSort(vetorBlocosMinerados, 0, 15);
+      escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
     }
 
@@ -812,7 +1023,7 @@ int main(int argc, char *argv[])
       }
     }
     */
-
+    //insereNoIterativo(&raizArvoreNonce, blocoNMinerado);
     /*
     printf("\n");
     printf("Bloco: %d\n", blocoN.numero);
@@ -928,6 +1139,7 @@ int main(int argc, char *argv[])
     printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
     // criando um case 10, só pra testar e verificar algumas coisas sobre a carteira
     printf("10. Imprimir carteira\n");
+    printf("11. Imprimir arvore nonce based\n");
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
@@ -980,6 +1192,10 @@ int main(int argc, char *argv[])
     break;
     case 9:
     {
+      unsigned int nonceProcurado;
+      printf("Digite um nonce: ");
+      scanf("%u", &nonceProcurado);
+      procurarNonceEmArquivoBinario("arquivo_indices_nonce.bin", quantidadeDeElementosEscritosNoArquivoBinario, nonceProcurado);
     }
     break;
     case 10:
@@ -989,6 +1205,10 @@ int main(int argc, char *argv[])
       printf("\n");
     }
     break;
+    case 11:
+    {
+      printEmOrdem(raizArvoreNonce);
+    }break;
     default:
       printf("Opcao invalida.\n");
       break;
