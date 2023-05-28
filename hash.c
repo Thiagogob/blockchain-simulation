@@ -31,6 +31,7 @@ typedef struct listaBTC
   struct listaBTC *next;
 } listaBTC;
 
+//-------------------------------------------------------------------------------
 
 //Funcao para criar um no na lista dos enderecos que tem BTC
 listaBTC *criaNo(unsigned int endereco)
@@ -46,6 +47,7 @@ listaBTC *criaNo(unsigned int endereco)
   return novoEndereco;
 }
 
+//-------------------------------------------------------------------------------
 
 //Funcao para inserir um endereco na lista dos que tem BTC
 void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
@@ -63,6 +65,8 @@ void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
   }
 }
 
+//-------------------------------------------------------------------------------
+
 //essa funcao serve para verificar se o minerador pode entrar na lista
 //pois nao eh interessante a repeticao de enderecos na lista
 int verificaSeMineradorPodeEntrarNaLista(listaBTC* enderecosComBTC, unsigned int endereco){
@@ -76,6 +80,8 @@ int verificaSeMineradorPodeEntrarNaLista(listaBTC* enderecosComBTC, unsigned int
   return 1;
 }
 
+//-------------------------------------------------------------------------------
+
 //Funcao para printar a lista
 void mostraLista(listaBTC *inicio)
 {
@@ -88,6 +94,8 @@ void mostraLista(listaBTC *inicio)
   printf("\n");
 }
 
+//-------------------------------------------------------------------------------
+
 //printar hash
 void printHash(unsigned char hash[], int length)
 {
@@ -99,12 +107,16 @@ void printHash(unsigned char hash[], int length)
   printf("\n");
 }
 
+//-------------------------------------------------------------------------------
+
 void printarHashArquivo(FILE *pArq, unsigned char* hash){
   const char* FORMATO_BLOCO_MINERADO_HASH = "%02x";
   for(int i=0; i<SHA256_DIGEST_LENGTH; i++){
     fprintf(pArq, FORMATO_BLOCO_MINERADO_HASH, hash[i]);
   }
 }
+
+//-------------------------------------------------------------------------------
 
 //funcao para preencher o bloco genesis com os campos
 //solicitados no enunciado do projeto
@@ -133,6 +145,8 @@ void preencheBlocoGenesis(BlocoNaoMinerado *blocoGenesis)
   blocoGenesis->numero = 1;
 }
 
+//-------------------------------------------------------------------------------
+
 //inicializar a carteira do projeto com zeros
 void inicializaCarteira(unsigned int *carteira)
 {
@@ -142,6 +156,8 @@ void inicializaCarteira(unsigned int *carteira)
   }
 }
 
+
+//-------------------------------------------------------------------------------
 //funcao para minerar bloco genesis
 BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *carteira, listaBTC **enderecosComBTC, MTRand *r, int *contador)
 {
@@ -179,29 +195,18 @@ BlocoMinerado minerarBlocoGenesis(BlocoNaoMinerado *blocoGenesis, unsigned int *
     blocoGenesisMinerado.hash[i] = hash[i];
   }
 
-  /*
-  printf("Hash: ");
-  printHash(hash, SHA256_DIGEST_LENGTH);
-  */
 
   // ATUALIZA CARTEIRA DO SISTEMA DEPOIS DA VALIDAÇÃO DO BLOCO
   carteira[minerador] = 50;
 
   // COLOCA PRIMEIRO MINERADOR NA LISTA DE ENDERECOS COM BTC
   insereNoInicio(enderecosComBTC, minerador, contador);
-  /*
-  insereNoInicio(enderecosComBTC, (unsigned char)100, contador);
-  insereNoInicio(enderecosComBTC, (unsigned char)50, contador);
-  insereNoInicio(enderecosComBTC, (unsigned char)20, contador);
-  insereNoInicio(enderecosComBTC, (unsigned char)70, contador);
-  */
-
-  //mostraLista(*enderecosComBTC);
-  // printf("contador: %d\n", *contador);
+  
 
   return blocoGenesisMinerado;
 }
 
+//-------------------------------------------------------------------------------
 //funcao para procurar um endereco de destino na lista de quem tem BTC
 unsigned char procuraEndereco(listaBTC *enderecosComBTC, int indice)
 {
@@ -212,7 +217,11 @@ unsigned char procuraEndereco(listaBTC *enderecosComBTC, int indice)
   }
   return tmp->endereco;
 }
+//-------------------------------------------------------------------------------
 
+
+
+//-------------------------------------------------------------------------------
 //funcao para remover um endereco
 //usada caso algum endereco que tinha BTC tenha transferido todas que tinha
 void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *contador){
@@ -241,6 +250,9 @@ void removerEndereco(listaBTC **enderecosComBTC, unsigned char endereco, int *co
   return;
 
 }
+
+//-------------------------------------------------------------------------------
+
 
 void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int numeroBloco, MTRand *r, int *contador, listaBTC *enderecosComBTC, unsigned int *carteira, unsigned char qtdTransacoes)
 {
@@ -324,6 +336,8 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
 
 }
 
+//-------------------------------------------------------------------------------
+
 BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, listaBTC **enderecosComBTC, int *contador, unsigned char qtdTransacoes){
 
   BlocoMinerado blocoNMinerado;
@@ -399,7 +413,7 @@ BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, lis
   return blocoNMinerado;
 }
 
-
+//---------------------------------------------------------------------------------------
 
 
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
@@ -424,6 +438,8 @@ void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
   fclose(arquivo);
 }
 
+//--------------------------------------------------------------------------------------
+
 void criarArquivoIndicesNonce(BlocoMinerado *vetorBlocosMinerados, int tamanho, const char *nomeArquivo)
 {
   FILE *arquivo = fopen(nomeArquivo, "w");
@@ -440,6 +456,9 @@ void criarArquivoIndicesNonce(BlocoMinerado *vetorBlocosMinerados, int tamanho, 
 
   fclose(arquivo);
 }
+
+
+//-------------------------------------------------------------------------------
 
 void criarArquivoBlocosMinerados(BlocoMinerado *blocos, int quantidade, const char *nomeArquivo)
 {
@@ -459,6 +478,8 @@ void criarArquivoBlocosMinerados(BlocoMinerado *blocos, int quantidade, const ch
   fclose(arquivo);
 
 }
+
+//-------------------------------------------------------------------------------
 
 void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
   const char* FORMATO_BLOCO_MINERADO = "\nBloco: %d\nNonce: %d\nMinerador: %u\n";
@@ -489,6 +510,8 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados){
   }
   fclose(pArqTexto);
 }
+
+//-------------------------------------------------------------------------------
 
 void escreverArquivoTextoComGenesis(BlocoMinerado *vetorBlocosMinerados){
   const char* FORMATO_BLOCO_MINERADO = "Bloco: %d\nNonce: %d\nMinerador: %u\n";
