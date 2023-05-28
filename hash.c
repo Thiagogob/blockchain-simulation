@@ -262,6 +262,7 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   // inicializando campo nonce
   blocoN->nonce = 0;
 
+
   // PREENCHENDO VETOR DATA COM ZEROS
   for (int i = 0; i < 184; i++)
   {
@@ -340,6 +341,7 @@ BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, lis
 {
 
   BlocoMinerado blocoNMinerado;
+
 
   unsigned char hash[SHA256_DIGEST_LENGTH];
 
@@ -860,63 +862,63 @@ int main(int argc, char *argv[])
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
-    switch (choice)
-    {
-    case 0:
-    {
-    }
-    break;
-    case 1:
-    {
-    }
-    break;
-    case 2:
-    {
-      printf("\n");
-      imprimirEnderecoMaisMinerou(enderecosComBTC);
-      printf("\n");
-    }
-    break;
-    case 3:
-    {
-    }
-    break;
-    case 4:
-    {
-    }
-    break;
-    case 5:
-    {
-    }
-    break;
-    case 6:
-    {
-    }
-    break;
-    case 7:
-    {
-    }
-    break;
-    case 8:
-    {
-    }
-    break;
-    case 9:
-    {
-    }
-    break;
-    case 10:
-    {
-      printf("\n->> CONTEÚDO DA CARTEIRA:\n");
-      imprimirCarteira(carteira);
-      printf("\n");
-    }
-    break;
-    default:
-      printf("Opcao invalida.\n");
-      break;
-    }
-  } while (choice != 0);
+        switch(choice) {
+            case 0:{
+                
+                }break;
+            case 1:{
+              
+                printf("\n--------------------------------------------------------------------\n");
+                int enderecoMaisBitcoins = 0, max = 0;
+                for (int i = 0; i < 255; i++)
+                {
+                  if (carteira[i] > max)
+                  {
+                    max = carteira[i];
+                    enderecoMaisBitcoins = i;
+                  }
+                }
+ 
+                printf("\nEndereco com mais bitcoins: %d\n", enderecoMaisBitcoins);
+                printf("Quantidade de bitcoins desse endereco: %d\n\n", max);
+              
+                }break;
+            case 2:{
+                printf("\n");
+                imprimirEnderecoMaisMinerou(enderecosComBTC);
+                printf("\n");
+                }break;
+            case 3:{
+
+                }break;
+            case 4:{
+
+                }break;
+            case 5:{
+
+                }break;
+            case 6:{
+
+                }break;
+            case 7:{
+
+                }break;
+            case 8:{
+
+                }break;
+            case 9:{
+
+                }break;
+          case 10:{
+              printf("\n->> CONTEÚDO DA CARTEIRA:\n");
+              imprimirCarteira(carteira);
+              printf("\n");
+                }break;
+            default:
+                printf("Opcao invalida.\n");
+                break;
+        }
+    } while(choice != 0);
 
   return 0;
 }
