@@ -940,19 +940,7 @@ int main(int argc, char *argv[])
     case 1:
     {
 
-      printf("\n--------------------------------------------------------------------\n");
-      int enderecoMaisBitcoins = 0, max = 0;
-      for (int i = 0; i < 255; i++)
-      {
-        if (carteira[i] > max)
-        {
-          max = carteira[i];
-          enderecoMaisBitcoins = i;
-        }
-      }
-
-      printf("\nEndereco com mais bitcoins: %d\n", enderecoMaisBitcoins);
-      printf("Quantidade de bitcoins desse endereco: %d\n\n", max);
+      
     }
     break;
     case 2:
