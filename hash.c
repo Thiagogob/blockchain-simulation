@@ -840,7 +840,7 @@ int main(int argc, char *argv[])
   printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
   printf("\n");
 
-  //lerArquivoBinario("blocos_minerados.bin");
+  lerArquivoBinario("blocos_minerados.bin");
   //---------------------------------------------------------------------------------------------------------------------------
 
   int choice;
