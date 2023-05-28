@@ -262,7 +262,6 @@ void inicializarBloco(unsigned char *hashAnterior, BlocoNaoMinerado *blocoN, int
   // inicializando campo nonce
   blocoN->nonce = 0;
 
-
   // PREENCHENDO VETOR DATA COM ZEROS
   for (int i = 0; i < 184; i++)
   {
@@ -342,7 +341,6 @@ BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, lis
 
   BlocoMinerado blocoNMinerado;
 
-
   unsigned char hash[SHA256_DIGEST_LENGTH];
 
   // gerando um hash para o bloco
@@ -419,7 +417,48 @@ BlocoMinerado minerarBloco(BlocoNaoMinerado *blocoN, unsigned int *carteira, lis
 }
 
 //---------------------------------------------------------------------------------------
+int binarySearch(BlocoMinerado *vetorBlocosMinerados, int menor, int maior, unsigned int numeroBlocoProcurado)
+{
+  while (menor <= maior)
+  {
 
+    int meio = menor + (maior - menor) / 2;
+
+    if (vetorBlocosMinerados[meio].bloco.numero == numeroBlocoProcurado)
+    {
+      printf("\n");
+      printf("=======================================\n");
+      printf("Bloco: %d\n", vetorBlocosMinerados[meio].bloco.numero);
+      printf("Nonce: %d\n", vetorBlocosMinerados[meio].bloco.nonce);
+      printf("Minerador: %u\n", vetorBlocosMinerados[meio].bloco.data[183]);
+      printf("Hash anterior: ");
+      printHash(vetorBlocosMinerados[meio].bloco.hashAnterior, SHA256_DIGEST_LENGTH);
+      printf("Hash valido: ");
+      printHash(vetorBlocosMinerados[meio].hash, SHA256_DIGEST_LENGTH);
+
+      printf("\nTRANSACOES\n");
+      for (int i = 0; i < 184; i++)
+      {
+        printf("[%u] - ", vetorBlocosMinerados[meio].bloco.data[i]);
+        if ((i + 1) % 3 == 0)
+        {
+          printf("\n");
+        }
+      }
+      printf("\n=======================================\n");
+      return 1;
+    }
+    else if (vetorBlocosMinerados[meio].bloco.numero < numeroBlocoProcurado)
+    {
+      menor = meio + 1;
+    }
+    else
+    {
+      maior = meio - 1;
+    }
+  }
+  return -1;
+}
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
 void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
 {
@@ -517,7 +556,7 @@ void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados)
   fclose(pArqTexto);
 }
 
-//-------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------
 
 void escreverArquivoTextoComGenesis(BlocoMinerado *vetorBlocosMinerados)
 {
@@ -569,21 +608,50 @@ void lerArquivoBinario(unsigned char *nomeArquivo)
     return;
   }
 
-  BlocoMinerado array[16];
+  BlocoMinerado vetorBlocos[16];
   size_t elements_read;
 
-  while ((elements_read = fread(array, sizeof(BlocoMinerado), 16, file)) != 0)
+  while ((elements_read = fread(vetorBlocos, sizeof(BlocoMinerado), 16, file)) != 0)
   {
     for (size_t i = 0; i < elements_read; i++)
     {
-      printf("Bloco: %u\n", array[i].bloco.numero);
-      printf("Hash Valido: ");
-      printHash(array[i].hash, SHA256_DIGEST_LENGTH);
-      printf("\n");
+      // printf("Bloco: %u\n", array[i].bloco.numero);
+      // printf("Hash Valido: ");
+      // printHash(array[i].hash, SHA256_DIGEST_LENGTH);
+      // printf("\n");
     }
   }
 
   fclose(file);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void procurarBlocoEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo, unsigned int numeroBlocoProcurado)
+{
+  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca\n");
+    return;
+  }
+  BlocoMinerado vetorBlocosMinerados[16];
+
+  // calculo para saber a quantidade de "chunks" escritas no arquivo
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
+
+  // se nao for multiplo de 16 haverao elementos restantes
+  int elementosRestantes = quantidadeDeElementosEscritosNoArquivo % 16;
+
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fread(vetorBlocosMinerados, sizeof(BlocoMinerado), 16, arqBinario);
+    int flag = binarySearch(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    if(flag==1){
+      fclose(arqBinario);
+      return;
+    }
+  }
+
+  fclose(arqBinario);
 }
 //-------------------------------------------------------------------------------------------------------------------
 /// Função para imprimir o endereço que minerou mais blocos
@@ -683,7 +751,7 @@ int main(int argc, char *argv[])
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
   // i=29999
-  for (int i = 0; i < 63; i++)
+  for (int i = 0; i < 31; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -745,6 +813,7 @@ int main(int argc, char *argv[])
     }
     */
 
+    /*
     printf("\n");
     printf("Bloco: %d\n", blocoN.numero);
     printf("Nonce: %d\n", blocoN.nonce);
@@ -753,7 +822,7 @@ int main(int argc, char *argv[])
     printHash(blocoN.hashAnterior, SHA256_DIGEST_LENGTH);
     printf("Hash valido: ");
     printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
-
+    */
     // printf("lista de enderecos com BTC: ");
     // mostraLista(enderecosComBTC);
     // printf("\n================================\n");
@@ -840,8 +909,8 @@ int main(int argc, char *argv[])
   printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
   printf("\n");
 
-  lerArquivoBinario("blocos_minerados.bin");
-  //---------------------------------------------------------------------------------------------------------------------------
+  // lerArquivoBinario("blocos_minerados.bin");
+  //----------------------------------------------------------------------------------------------------------------------------
 
   int choice;
   do
@@ -862,63 +931,81 @@ int main(int argc, char *argv[])
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
-        switch(choice) {
-            case 0:{
-                
-                }break;
-            case 1:{
-              
-                printf("\n--------------------------------------------------------------------\n");
-                int enderecoMaisBitcoins = 0, max = 0;
-                for (int i = 0; i < 255; i++)
-                {
-                  if (carteira[i] > max)
-                  {
-                    max = carteira[i];
-                    enderecoMaisBitcoins = i;
-                  }
-                }
- 
-                printf("\nEndereco com mais bitcoins: %d\n", enderecoMaisBitcoins);
-                printf("Quantidade de bitcoins desse endereco: %d\n\n", max);
-              
-                }break;
-            case 2:{
-                printf("\n");
-                imprimirEnderecoMaisMinerou(enderecosComBTC);
-                printf("\n");
-                }break;
-            case 3:{
+    switch (choice)
+    {
+    case 0:
+    {
+    }
+    break;
+    case 1:
+    {
 
-                }break;
-            case 4:{
-
-                }break;
-            case 5:{
-
-                }break;
-            case 6:{
-
-                }break;
-            case 7:{
-
-                }break;
-            case 8:{
-
-                }break;
-            case 9:{
-
-                }break;
-          case 10:{
-              printf("\n->> CONTEÚDO DA CARTEIRA:\n");
-              imprimirCarteira(carteira);
-              printf("\n");
-                }break;
-            default:
-                printf("Opcao invalida.\n");
-                break;
+      printf("\n--------------------------------------------------------------------\n");
+      int enderecoMaisBitcoins = 0, max = 0;
+      for (int i = 0; i < 255; i++)
+      {
+        if (carteira[i] > max)
+        {
+          max = carteira[i];
+          enderecoMaisBitcoins = i;
         }
-    } while(choice != 0);
+      }
+
+      printf("\nEndereco com mais bitcoins: %d\n", enderecoMaisBitcoins);
+      printf("Quantidade de bitcoins desse endereco: %d\n\n", max);
+    }
+    break;
+    case 2:
+    {
+      printf("\n");
+      imprimirEnderecoMaisMinerou(enderecosComBTC);
+      printf("\n");
+    }
+    break;
+    case 3:
+    {
+    }
+    break;
+    case 4:
+    {
+    }
+    break;
+    case 5:
+    {
+    }
+    break;
+    case 6:
+    {
+      unsigned int numeroBlocoProcurado;
+      printf("Numero do bloco que deseja procurar: ");
+      scanf("%u", &numeroBlocoProcurado);
+      procurarBlocoEmArquivoBinario("blocos_minerados.bin", quantidadeDeElementosEscritosNoArquivoBinario, numeroBlocoProcurado);
+    }
+    break;
+    case 7:
+    {
+    }
+    break;
+    case 8:
+    {
+    }
+    break;
+    case 9:
+    {
+    }
+    break;
+    case 10:
+    {
+      printf("\n->> CONTEÚDO DA CARTEIRA:\n");
+      imprimirCarteira(carteira);
+      printf("\n");
+    }
+    break;
+    default:
+      printf("Opcao invalida.\n");
+      break;
+    }
+  } while (choice != 0);
 
   return 0;
 }
