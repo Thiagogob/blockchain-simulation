@@ -1162,7 +1162,9 @@ int main(int argc, char *argv[])
 
   TBlocoETransacoes vetorBlocosComTransacoes[qtdBlocosMinerar];
   vetorBlocosComTransacoes[0].qtdTransacoes = 0;
-  vetorBlocosComTransacoes[0].bloco = blocoGenesisMinerado; 
+  vetorBlocosComTransacoes[0].bloco = blocoGenesisMinerado;
+
+  
   // Minerar 30.000 blocos agora
   // i=29999
   for (int i = 0; i < (qtdBlocosMinerar-1); i++)
@@ -1427,6 +1429,15 @@ int main(int argc, char *argv[])
     break;
     case 5:
     {
+      //como nenhuma BTC sai do sistema ou some
+      //Eh valido dizer que a media de BTC por bloco eh o total de BTC no sistema
+      //dividido pela quantia de blocos minerados
+      int qtdTotalBTC=0;
+      for(int i=0; i<256; i++){
+        qtdTotalBTC+=carteira[i];
+      }
+      float qtdBTCPorBloco = (float)qtdTotalBTC/qtdBlocosMinerar;
+      printf("\nQuantidade media de BTC por bloco: %.3f\n", qtdBTCPorBloco);
     }
     break;
     case 6:
