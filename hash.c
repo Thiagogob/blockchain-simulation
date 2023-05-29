@@ -654,25 +654,75 @@ void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
 
 //--------------------------------------------------------------------------------------
 
-void criarArquivoIndicesNonce(BlocoMinerado *vetorBlocosMinerados, int tamanho, const char *nomeArquivo)
+void escreverArquivoBinarioDeIndicesBaseadoNoNonce(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo)
 {
-  FILE *arquivo = fopen(nomeArquivo, "w");
-  if (arquivo == NULL)
-  {
-    printf("Erro ao criar o arquivo de índices por nonce.\n");
-    return;
+  FILE *arqIndiceNonce = fopen(nomeArquivo, "ab");
+  if(arqIndiceNonce == NULL){
+    printf("Erro ao tentar abrir arquivo de indices baseados no Nonce");
   }
+  
+  // Escreve os indices no arquivo
+    for (int i = 0; i < 16; i++) {
+        fwrite(&i, sizeof(unsigned int), 1, arqIndiceNonce);
+    }
 
-  for (int i = 0; i < tamanho; i++)
-  {
-    fprintf(arquivo, "%d %u\n", i, vetorBlocosMinerados[i].bloco.nonce);
-  }
+    // Escreve os nonces no arquivo
+    for (int i = 0; i < 16; i++) {
+        fwrite(&(vetorBlocosMinerados[i].bloco.nonce), sizeof(unsigned int), 1, arqIndiceNonce);
+    }
 
-  fclose(arquivo);
+  fclose(arqIndiceNonce);
+}
+//-------------------------------------------------------------------
+void lerArquivoBinarioDeIndices(const char* nomeArquivo)
+{
+    // Abre o arquivo binário para leitura
+    FILE* arquivo = fopen(nomeArquivo, "rb");
+    if (arquivo == NULL) {
+        printf("Erro ao abrir o arquivo %s\n", nomeArquivo);
+        return;
+    }
+
+    unsigned int indice;
+    unsigned int nonce;
+
+    // Lê os índices e nonces do arquivo e exibe na tela
+    while (fread(&indice, sizeof(unsigned int), 1, arquivo) == 1 && fread(&nonce, sizeof(unsigned int), 1, arquivo) == 1) {
+        printf("Índice: %u, Nonce: %u\n", indice, nonce);
+    }
+
+    // Fecha o arquivo
+    fclose(arquivo);
+}
+//-------------------------------------------------------------------------------
+void imprimirIndices(const char* nomeArquivo) {
+    FILE* arqIndiceNonce = fopen(nomeArquivo, "rb");
+    if (arqIndiceNonce == NULL) {
+        printf("Erro ao tentar abrir o arquivo de índices baseados no Nonce");
+        return;
+    }
+
+    unsigned int nonce;
+    unsigned int index;
+    size_t elementosLidos;
+
+    while ((elementosLidos = fread(&nonce, sizeof(unsigned int), 1, arqIndiceNonce)) == 1) {
+        elementosLidos += fread(&index, sizeof(unsigned int), 1, arqIndiceNonce);
+
+        printf("Nonce: %u, Index: %u\n", nonce, index);
+
+        if (elementosLidos != 2) {
+            printf("Erro ao ler o arquivo de índices baseados no Nonce");
+            fclose(arqIndiceNonce);
+            return;
+        }
+    }
+
+    fclose(arqIndiceNonce);
 }
 
-//-------------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------------
 void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char *nomeArquivo)
 {
   FILE *arqBinario = fopen(nomeArquivo, "ab");
@@ -683,6 +733,7 @@ void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeD
   }
 
   size_t quantidadeDeElementosEscritos = fwrite(vetorBlocosMinerados, sizeof(BlocoMinerado), quantidadeDeElementosParaEscrever, arqBinario);
+  
 
   if (quantidadeDeElementosEscritos != quantidadeDeElementosParaEscrever)
   {
@@ -771,30 +822,35 @@ void escreverArquivoTextoComGenesis(BlocoMinerado *vetorBlocosMinerados)
 }
 
 //-------------------------------------------------------------------------------------------------------------------
-void lerArquivoBinario(unsigned char *nomeArquivo)
+void imprimirDadosArquivo(const char* nomeArquivo)
 {
-  FILE *file = fopen(nomeArquivo, "rb");
-  if (file == NULL)
-  {
-    printf("Nao foi possivel abrir arquivo para leitura\n");
+  FILE* arquivo = fopen(nomeArquivo, "rb");
+  if (arquivo == NULL) {
+    printf("Erro ao abrir o arquivo.\n");
     return;
   }
 
-  BlocoMinerado vetorBlocos[16];
-  size_t elements_read;
+  BlocoMinerado bloco;
+  for (int i = 0; i < 16; i++) {
+    fread(&bloco, sizeof(BlocoMinerado), 1, arquivo);
 
-  while ((elements_read = fread(vetorBlocos, sizeof(BlocoMinerado), 16, file)) != 0)
-  {
-    for (size_t i = 0; i < elements_read; i++)
-    {
-      // printf("Bloco: %u\n", array[i].bloco.numero);
-      // printf("Hash Valido: ");
-      // printHash(array[i].hash, SHA256_DIGEST_LENGTH);
-      // printf("\n");
+    printf("Bloco %d:\n", i + 1);
+    printf("Numero: %u\n", bloco.bloco.numero);
+    printf("Nonce: %u\n", bloco.bloco.nonce);
+    printf("Data: %s\n", bloco.bloco.data);
+    printf("Hash Anterior: ");
+    for (int j = 0; j < SHA256_DIGEST_LENGTH; j++) {
+      printf("%02x", bloco.bloco.hashAnterior[j]);
     }
+    printf("\n");
+    printf("Hash valido: ");
+    for (int j = 0; j < SHA256_DIGEST_LENGTH; j++) {
+      printf("%02x", bloco.hash[j]);
+    }
+    printf("\n\n");
   }
 
-  fclose(file);
+  fclose(arquivo);
 }
 //-------------------------------------------------------------------------------------------------------------------
 void procurarBlocoEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo, unsigned int numeroBlocoProcurado)
@@ -986,8 +1042,12 @@ int main(int argc, char *argv[])
     {
       escreverArquivoTextoComGenesis(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
-      quickSort(vetorBlocosMinerados, 0, 15);
-      escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
+      escreverArquivoBinarioDeIndicesBaseadoNoNonce(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
+      //lerArquivoBinarioDeIndices("arquivo_indices_nonce.bin");
+      //imprimirDadosArquivo("blocos_minerados.bin");
+      //imprimirIndices("arquivo_indices_nonce.bin");
+      //quickSort(vetorBlocosMinerados, 0, 15);
+      //escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
       /*
       for(int i=0; i<16; i++){
@@ -1006,8 +1066,8 @@ int main(int argc, char *argv[])
     {
       escreverArquivoTexto(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
-      quickSort(vetorBlocosMinerados, 0, 15);
-      escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
+      //quickSort(vetorBlocosMinerados, 0, 15);
+      //escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
     }
 
@@ -1110,7 +1170,7 @@ int main(int argc, char *argv[])
   criarArquivoIndices(enderecosComBTC, "indices.txt");
   printf("Arquivo de ÍNDICES criado com sucesso.\n");
 
-  criarArquivoIndicesNonce(vetorBlocosMinerados, 16, "indices_nonce.txt");
+  //criarArquivoIndicesNonce(vetorBlocosMinerados, 16, "indices_nonce.txt");
   printf("Arquivo de ÍNDICES NONCE criado com sucesso.\n");
 
   // case 6 e 8 utilizarão o arquivo gerado nessa função
@@ -1190,10 +1250,12 @@ int main(int argc, char *argv[])
     break;
     case 9:
     {
+      /*
       unsigned int nonceProcurado;
       printf("Digite um nonce: ");
       scanf("%u", &nonceProcurado);
       procurarNonceEmArquivoBinario("arquivo_indices_nonce.bin", quantidadeDeElementosEscritosNoArquivoBinario, nonceProcurado);
+      */
     }
     break;
     case 10:
