@@ -70,6 +70,7 @@ void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
   if (*inicio == NULL)
   {
     *inicio = novoEndereco;
+    (*contador)++;
   }
   else
   {
@@ -103,10 +104,12 @@ int verificaSeMineradorPodeEntrarNaLista(listaBTC *enderecosComBTC, unsigned int
 void mostraLista(listaBTC *inicio)
 {
   listaBTC *aux = inicio;
+  int i=1;
   while (aux != NULL)
   {
-    printf("%u - ", aux->endereco);
+    printf("(%d) %u - ", i, aux->endereco);
     aux = aux->next;
+    i++;
   }
   printf("\n");
 }
@@ -625,10 +628,6 @@ int binarySearchBaseadoNonce(BlocoMinerado* arr, int menor,int maior, unsigned i
             maior = mid - 1;
     }
 
-    if (!found)
-        printf("\nTarget not found!\n");
-
-    printf("\n");
 }
 
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
@@ -953,7 +952,7 @@ int main(int argc, char *argv[])
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
   // i=29999
-  for (int i = 0; i < 15; i++)
+  for (int i = 0; i < 16; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -1035,7 +1034,7 @@ int main(int argc, char *argv[])
     printHash(blocoNMinerado.hash, SHA256_DIGEST_LENGTH);
     */
     // printf("lista de enderecos com BTC: ");
-    // mostraLista(enderecosComBTC);
+    //mostraLista(enderecosComBTC);
     // printf("\n================================\n");
     // printf("pode ? %d", verificaSeMineradorPodeEntrarNaLista(enderecosComBTC, 139));
   }
@@ -1103,7 +1102,7 @@ int main(int argc, char *argv[])
 
   // mostraLista(enderecosComBTC);
 
-  // printf("qtd elementos: %d", contador);
+  //printf("\nqtd elementos: %d\n", contador);
 
   //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
 
@@ -1139,7 +1138,6 @@ int main(int argc, char *argv[])
     printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
     // criando um case 10, só pra testar e verificar algumas coisas sobre a carteira
     printf("10. Imprimir carteira\n");
-    printf("11. Imprimir arvore nonce based\n");
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
@@ -1205,10 +1203,6 @@ int main(int argc, char *argv[])
       printf("\n");
     }
     break;
-    case 11:
-    {
-      printEmOrdem(raizArvoreNonce);
-    }break;
     default:
       printf("Opcao invalida.\n");
       break;
