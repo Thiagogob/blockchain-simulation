@@ -1172,7 +1172,7 @@ int main(int argc, char *argv[])
   unsigned char hashAnterior[SHA256_DIGEST_LENGTH];
   // Minerar 30.000 blocos agora
   // i=29999
-  for (int i = 0; i < 15; i++)
+  for (int i = 0; i < 16; i++)
   {
 
     BlocoNaoMinerado blocoN;
@@ -1332,19 +1332,6 @@ int main(int argc, char *argv[])
 
   //------------------------ FUNÇÕES QUE CRIAM ARQUIVOS QUE SERÃO UTILIZADOS NOS CASES 6,7,8 e 9 -----------------------------
 
-  printf("\n-----------------------------------------------------------------\n\n");
-  criarArquivoIndices(enderecosComBTC, "indices.txt");
-  printf("Arquivo de ÍNDICES criado com sucesso.\n");
-
-  //criarArquivoIndicesNonce(vetorBlocosMinerados, 16, "indices_nonce.txt");
-  printf("Arquivo de ÍNDICES NONCE criado com sucesso.\n");
-
-  // case 6 e 8 utilizarão o arquivo gerado nessa função
-  // criarArquivoBlocosMinerados(vetorBlocosMinerados, 16, "blocos_minerados.bin");
-  // printf apenas para "validar" e verificar o funcionamento da função
-  printf("Arquivo de BLOCOS MINERADOS criado com sucesso.\n");
-  printf("\n");
-
   // lerArquivoBinario("blocos_minerados.bin");
   //----------------------------------------------------------------------------------------------------------------------------
 
@@ -1353,15 +1340,15 @@ int main(int argc, char *argv[])
   {
     printf("--------------------------- MENU ---------------------------------------");
     printf("\n0. Inicializar todo o programa\n");
-    printf("1. Endereco com mais bitcoins\n");
-    printf("2. Endereco que minerou mais blocos\n");
-    printf("3. Bloco com mais transacoes\n");
-    printf("4. Bloco com menos transacoes\n");
-    printf("5. Quantidade media de bitcoins por bloco\n");
-    printf("6. Imprimir campos de um bloco\n");
-    printf("7. Imprimir campos dos primeiros blocos de um endereco\n");
-    printf("8. Imprimir campos dos primeiros blocos em ordem crescente de transacoes\n");
-    printf("9. Imprimir campos de todos os blocos com um dado nonce\n");
+    printf("1. Imprimir endereco(s) com mais bitcoins\n");
+    printf("2. Imprimir endereco(s) que minerou mais blocos\n");
+    printf("3. Imprimir bloco(s) com mais transacoes\n");
+    printf("4. Imprimir bloco(s) com menos transacoes\n");
+    printf("5. Imprimir quantidade media de bitcoins por bloco\n");
+    printf("6. Imprimir todos os campos de um bloco dado seu numero\n");
+    printf("7. Imprimir todos os campos dos N primeiros blocos minerados por um endereco\n");
+    printf("8. Imprimir em ordem crescente de quantidade de transacoes todos os campos dos N primeiros blocos\n");
+    printf("9. Imprimir todos os campos de todos os blocos que tem um dado nonce\n");
     // criando um case 10, só pra testar e verificar algumas coisas sobre a carteira
     printf("10. Imprimir carteira\n");
     printf("Escolha uma opcao: ");
@@ -1375,8 +1362,23 @@ int main(int argc, char *argv[])
     break;
     case 1:
     {
+      unsigned int maiorQtdBTC=0;
+      unsigned int enderecoComMaisBTC;
 
-      
+      //loop na carteira para saber a maior quantidade de BTC
+      for(int i=0; i<256; i++){
+        if(carteira[i]>maiorQtdBTC){
+          maiorQtdBTC = carteira[i];
+        }
+      }
+
+      //loop na carteira imprimindo todos os enderecos que possuem a maior quantia de BTC
+      for(int i=0; i<256; i++){
+        if(carteira[i]==maiorQtdBTC){
+          printf("\n=======ENDERECO(s) COM MAIS BTC=======\n");
+          printf("Endereco %u tem %uBTC\n", i, maiorQtdBTC);
+        }
+      }
     }
     break;
     case 2:
