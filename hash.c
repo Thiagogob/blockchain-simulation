@@ -1008,6 +1008,44 @@ void procurarNoArquivoDeIndicesMinerador(unsigned int enderecoMinerador, int qua
 
 }
 //-------------------------------------------------------------------------------------------------------------------
+void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
+{
+  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca no arquivo de indices minerador\n");
+    return;
+  }
+  TIndiceMinerador vetorBlocosMineradores[16];
+  unsigned int contagemDeMineracoesPorEndereco[255];
+
+  inicializaCarteira(contagemDeMineracoesPorEndereco);
+
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
+
+  unsigned int maiorQtdMineracoes=0;
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fread(vetorBlocosMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
+    // int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    for (int i = 0; i < 16; i++)
+    {
+      contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador]++;
+      if(contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador] > maiorQtdMineracoes){
+        maiorQtdMineracoes = contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador];
+      }
+    }
+    
+  }
+  for(int i=0; i<256; i++){
+    if(contagemDeMineracoesPorEndereco[i] == maiorQtdMineracoes){
+      printf("Endereco %u minerou a maior quantidade de blocos(%u)\n", i, maiorQtdMineracoes);
+    }
+  }
+  fclose(arqBinario);
+  return;
+}
+//-------------------------------------------------------------------------------------------------------------------
 void procurarNonceEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo, unsigned int nonceProcurado)
 {
   FILE *arqBinario = fopen(nomeDoArquivo, "rb");
@@ -1343,9 +1381,12 @@ int main(int argc, char *argv[])
     break;
     case 2:
     {
+      /*
       printf("\n");
       imprimirEnderecoMaisMinerou(enderecosComBTC);
       printf("\n");
+      */
+      procurarQuemMinerouMaisBlocos("arquivo_indices_minerador.bin", quantidadeDeElementosEscritosNoArquivoBinario);   
     }
     break;
     case 3:
