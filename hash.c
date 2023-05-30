@@ -9,7 +9,6 @@
 #include "mtwister.c"
 #include <stdlib.h>
 
-#define HASH_TABLE_SIZE 60000
 
 //-------------------------------------------------------------------------------
 
@@ -740,7 +739,7 @@ int binarySearchBaseadoNonce(BlocoMinerado* arr, int menor,int maior, unsigned i
 //--------------------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------------------------------
-void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo){
+void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo, unsigned int *contagemDeMineracoesPorEndereco){
     FILE *arqBinario = fopen(nomeArquivo, "ab");
     if (arqBinario == NULL)
     {
@@ -748,21 +747,34 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
       return;
     }
 
+    TIndiceMinerador vetorIndicesMineradores[16];
+    for(int j=0; j<16; j++){
+      vetorIndicesMineradores[j].minerador = vetorBlocosMinerados[j].bloco.data[183];
+      vetorIndicesMineradores[j].blocoDoMinerador = vetorBlocosMinerados[j];
+      //printf("\nMinerador: %u\n",vetorIndicesMineradores[i].minerador);
+      //printf("Bloco: %u\n", vetorIndicesMineradores[i].blocoDoMinerador.bloco.numero);
+    }
+
+    for (int i = 0; i < 16; i++)
+    {
+      //printf("\nMinerador: %u\n",vetorIndicesMineradores[i].minerador);
+      //printf("Bloco: %u\n", vetorIndicesMineradores[i].blocoDoMinerador.bloco.numero);
+      contagemDeMineracoesPorEndereco[vetorIndicesMineradores[i].minerador]++;
+    }
     /*
     unsigned char elementosParaEscrever[16];
     for (int i = 0; i < 16; i++) {
         elementosParaEscrever[i] = vetorBlocosMinerados[i].bloco.data[183];
     }
     */
-
-    TIndiceMinerador vetorIndicesMineradores[16];
-    for(int i=0; i<16; i++){
-      vetorIndicesMineradores[i].minerador = vetorBlocosMinerados[i].bloco.data[183];
-      vetorIndicesMineradores[i].blocoDoMinerador = vetorBlocosMinerados[i];
-    }
-
     size_t quantidadeDeElementosEscritos = fwrite(vetorIndicesMineradores, sizeof(TIndiceMinerador), quantidadeDeElementosParaEscrever, arqBinario);
-
+    //fread(vetorIndicesMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
+    /*
+    for(int j=0; j<16; j++){
+      printf("\nMinerador: %u\n",vetorIndicesMineradores[j].minerador);
+      printf("Bloco: %u\n", vetorIndicesMineradores[j].blocoDoMinerador.bloco.numero);
+    }
+    */
     if (quantidadeDeElementosEscritos != quantidadeDeElementosParaEscrever)
     {
       printf("Erro na escrita do arquivo binario");
@@ -770,6 +782,8 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
 
   fclose(arqBinario);
 }
+//---------------------------------------------------------------------------------------------------
+
 //---------------------------------------------------------------------------------------------------
 void lerArquivoBinarioDeIndices(const char* nomeArquivo)
 {
@@ -1140,29 +1154,70 @@ void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeEl
     return;
   }
   TIndiceMinerador vetorBlocosMineradores[16];
-  unsigned int contagemDeMineracoesPorEndereco[255];
+  unsigned int contagemDeMineracoesPorEndereco[256];
 
   inicializaCarteira(contagemDeMineracoesPorEndereco);
 
   int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
-
   unsigned int maiorQtdMineracoes=0;
+
   for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
   {
     fread(vetorBlocosMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
     // int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
     for (int i = 0; i < 16; i++)
     {
+      printf("\nMinerador: %u\n",vetorBlocosMineradores[i].minerador);
+      printf("Bloco: %u\n", vetorBlocosMineradores[i].blocoDoMinerador.bloco.numero);
       contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador]++;
       if(contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador] > maiorQtdMineracoes){
         maiorQtdMineracoes = contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador];
       }
     }
-    
   }
   for(int i=0; i<256; i++){
     if(contagemDeMineracoesPorEndereco[i] == maiorQtdMineracoes){
       printf("Endereco %u minerou a maior quantidade de blocos(%u)\n", i, maiorQtdMineracoes);
+    }
+  }
+  fclose(arqBinario);
+  return;
+}
+//-------------------------------------------------------------------------------------------------------------------
+void procurarQuemMinerouMaisBlocos2(const char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
+{
+  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca no arquivo de indices minerador\n");
+    return;
+  }
+  TIndiceMinerador vetorBlocosMineradores[quantidadeDeElementosEscritosNoArquivo];
+  unsigned int contagemDeMineracoesPorEndereco[256];
+
+  inicializaCarteira(contagemDeMineracoesPorEndereco);
+
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
+  unsigned int maiorQtdMineracoes=0;
+  int indice = 0;
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fread(&vetorBlocosMineradores[indice*16], sizeof(TIndiceMinerador), 16, arqBinario);
+    // int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    for (int i = 0; i < 16; i++)
+    {
+      printf("\nMinerador: %u\n",vetorBlocosMineradores[i].minerador);
+      printf("Bloco: %u\n", vetorBlocosMineradores[i].blocoDoMinerador.bloco.numero);
+      contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador]++;
+      if(contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador] > maiorQtdMineracoes){
+        maiorQtdMineracoes = contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador];
+      }
+    }
+    indice+=16;
+  }
+  for(int k=0; k<256; k++){
+    if(contagemDeMineracoesPorEndereco[k] == maiorQtdMineracoes){
+      printf("Endereco %u minerou a maior quantidade de blocos(%u)\n", k, maiorQtdMineracoes);
     }
   }
   fclose(arqBinario);
@@ -1301,7 +1356,8 @@ int main(int argc, char *argv[])
   vetorBlocosComTransacoes[0].qtdTransacoes = 0;
   vetorBlocosComTransacoes[0].bloco = blocoGenesisMinerado;
 
-  
+  unsigned int contagemDeMineracoesPorEndereco[256];
+  inicializaCarteira(contagemDeMineracoesPorEndereco);
   // Minerar 30.000 blocos agora
   // i=29999
   for (int i = 0; i < (qtdBlocosMinerar-1); i++)
@@ -1344,7 +1400,7 @@ int main(int argc, char *argv[])
 
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
       
-      escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin");
+      escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin", contagemDeMineracoesPorEndereco);
       
       
       
@@ -1364,7 +1420,7 @@ int main(int argc, char *argv[])
     {
       escreverArquivoTexto(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
-      escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin");
+      escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin", contagemDeMineracoesPorEndereco);
       //quickSort(vetorBlocosMinerados, 0, 15);
       //escreverArquivoBinario(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
@@ -1471,8 +1527,7 @@ int main(int argc, char *argv[])
   int choice;
   do
   {
-    printf("--------------------------- MENU ---------------------------------------");
-    printf("\n0. Inicializar todo o programa\n");
+    printf("--------------------------- MENU ---------------------------------------\n");
     printf("1. Imprimir endereco(s) com mais bitcoins\n");
     printf("2. Imprimir endereco(s) que minerou mais blocos\n");
     printf("3. Imprimir bloco(s) com mais transacoes\n");
@@ -1482,17 +1537,11 @@ int main(int argc, char *argv[])
     printf("7. Imprimir todos os campos dos N primeiros blocos minerados por um endereco\n");
     printf("8. Imprimir em ordem crescente de quantidade de transacoes todos os campos dos N primeiros blocos\n");
     printf("9. Imprimir todos os campos de todos os blocos que tem um dado nonce\n");
-    // criando um case 10, só pra testar e verificar algumas coisas sobre a carteira
-    printf("10. Imprimir carteira\n");
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
     switch (choice)
     {
-    case 0:
-    {
-    }
-    break;
     case 1:
     {
       unsigned int maiorQtdBTC=0;
@@ -1521,7 +1570,30 @@ int main(int argc, char *argv[])
       imprimirEnderecoMaisMinerou(enderecosComBTC);
       printf("\n");
       */
-      procurarQuemMinerouMaisBlocos("arquivo_indices_minerador.bin", quantidadeDeElementosEscritosNoArquivoBinario);   
+      //lerArquivoBinario("arquivo_indices_minerador.bin");
+      //procurarQuemMinerouMaisBlocos("arquivo_indices_minerador.bin", quantidadeDeElementosEscritosNoArquivoBinario);
+      unsigned int maiorQtdMineracoes=0;
+      for (int b = 0; b < 256; b++)
+      {
+        //fread(vetorBlocosMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
+        // int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+      
+          //printf("\nMinerador: %u\n", vetorBlocosMineradores[i].minerador);
+          //printf("Bloco: %u\n", vetorBlocosMineradores[i].blocoDoMinerador.bloco.numero);
+          //contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador]++;
+          if (contagemDeMineracoesPorEndereco[b] > maiorQtdMineracoes)
+          {
+            maiorQtdMineracoes = contagemDeMineracoesPorEndereco[b];
+          }
+        
+      }
+      for (int i = 0; i < 256; i++)
+      {
+        if (contagemDeMineracoesPorEndereco[i] == maiorQtdMineracoes)
+        {
+          printf("Endereco %u minerou a maior quantidade de blocos(%u)\n", i, maiorQtdMineracoes);
+        }
+      }
     }
     break;
     case 3:
