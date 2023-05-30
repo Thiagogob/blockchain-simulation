@@ -190,35 +190,110 @@ void inserirArvore(TNoABP** raiz, BlocoMinerado dadosBloco) {
 //---------------------------------QUICK SORT-----------------------------------------------------
 
 
-void troca(BlocoMinerado *a, BlocoMinerado *b){
-  BlocoMinerado tmp = *a;
+void troca(TBlocoETransacoes *a, TBlocoETransacoes *b){
+  TBlocoETransacoes tmp = *a;
   *a = *b;
   *b = tmp;
 }
 
-int partition(BlocoMinerado *vetorBlocosMinerados, int menor, int maior){
-  int pivot = vetorBlocosMinerados[maior].bloco.nonce;
+int partition(TBlocoETransacoes *vetorBlocosMinerados, int menor, int maior){
+  int pivot = vetorBlocosMinerados[maior].qtdTransacoes;
   int i = menor -1;
+  int j = maior +1;
 
-  for(int j=menor; j<=maior; j++){
-    if(vetorBlocosMinerados[j].bloco.nonce < pivot){
+      while (1) {
+        do {
+            i++;
+        } while (vetorBlocosMinerados[i].qtdTransacoes < pivot);
+
+        do {
+            j--;
+        } while (vetorBlocosMinerados[j].qtdTransacoes > pivot);
+
+        if (i >= j)
+            return j;
+
+        troca(&vetorBlocosMinerados[i], &vetorBlocosMinerados[j]);
+    }
+  /*
+  for(int j=menor; j<=maior-1; j++){
+    if(vetorBlocosMinerados[j].qtdTransacoes < pivot){
       i++;
       troca(&vetorBlocosMinerados[i], &vetorBlocosMinerados[j]);
     }
   }
-
+  */
   troca(&vetorBlocosMinerados[i+1], &vetorBlocosMinerados[maior]);
   return(i+1);
 }
 
-void quickSort(BlocoMinerado *vetorBlocosMinerados, int menor, int maior){
+void quickSort(TBlocoETransacoes *vetorBlocosMinerados, int menor, int maior){
   if(menor < maior){
     int pi = partition(vetorBlocosMinerados, menor, maior);
     quickSort(vetorBlocosMinerados, menor, pi-1);
     quickSort(vetorBlocosMinerados, pi + 1, maior);
   }
 }
+//-----------------------------MERGE SORT----------------------------------------
 
+void merge(TBlocoETransacoes arr[], int left, int middle, int right) {
+    int i, j, k;
+    int n1 = middle - left + 1;
+    int n2 = right - middle;
+
+    // Cria vetores temporários
+    TBlocoETransacoes L[n1], R[n2];
+
+    // Copia os dados para os vetores temporários L[] e R[]
+    for (i = 0; i < n1; i++)
+        L[i] = arr[left + i];
+    for (j = 0; j < n2; j++)
+        R[j] = arr[middle + 1 + j];
+
+    // Mescla os vetores temporários de volta em arr[l..r]
+    i = 0;
+    j = 0;
+    k = left;
+    while (i < n1 && j < n2) {
+        if (L[i].qtdTransacoes <= R[j].qtdTransacoes) {
+            arr[k] = L[i];
+            i++;
+        } else {
+            arr[k] = R[j];
+            j++;
+        }
+        k++;
+    }
+
+    // Copia os elementos restantes de L[], se houver algum
+    while (i < n1) {
+        arr[k] = L[i];
+        i++;
+        k++;
+    }
+
+    // Copia os elementos restantes de R[], se houver algum
+    while (j < n2) {
+        arr[k] = R[j];
+        j++;
+        k++;
+    }
+}
+
+void mergeSort(TBlocoETransacoes arr[], int left, int right) {
+    if (left < right) {
+        int middle = left + (right - left) / 2;
+
+        // Ordena a metade esquerda
+        mergeSort(arr, left, middle);
+
+        // Ordena a metade direita
+        mergeSort(arr, middle + 1, right);
+
+        // Une as duas metades ordenadas
+        merge(arr, left, middle, right);
+    }
+}
 
 //-------------------------------------------------------------------------------
 /*
@@ -660,48 +735,10 @@ int binarySearchBaseadoNonce(BlocoMinerado* arr, int menor,int maior, unsigned i
 }
 
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
-void criarArquivoIndices(listaBTC *inicio, const char *nomeArquivo)
-{
-  FILE *arquivo = fopen(nomeArquivo, "w");
-  if (arquivo == NULL)
-  {
-    printf("Erro ao criar o arquivo de índices.\n");
-    return;
-  }
 
-  listaBTC *aux = inicio;
-  unsigned int posicao = 0;
-  while (aux != NULL)
-  {
-    fprintf(arquivo, "%u %u\n", aux->endereco, posicao);
-    aux = aux->next;
-    posicao++;
-  }
-
-  fclose(arquivo);
-}
 
 //--------------------------------------------------------------------------------------
 
-void escreverArquivoBinarioDeIndicesBaseadoNoNonce(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo)
-{
-  FILE *arqIndiceNonce = fopen(nomeArquivo, "ab");
-  if(arqIndiceNonce == NULL){
-    printf("Erro ao tentar abrir arquivo de indices baseados no Nonce");
-  }
-  
-  // Escreve os indices no arquivo
-    for (int i = 0; i < 16; i++) {
-        fwrite(&i, sizeof(unsigned int), 1, arqIndiceNonce);
-    }
-
-    // Escreve os nonces no arquivo
-    for (int i = 0; i < 16; i++) {
-        fwrite(&(vetorBlocosMinerados[i].bloco.nonce), sizeof(unsigned int), 1, arqIndiceNonce);
-    }
-
-  fclose(arqIndiceNonce);
-}
 //---------------------------------------------------------------------------------------------------
 void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo){
     FILE *arqBinario = fopen(nomeArquivo, "ab");
@@ -780,8 +817,32 @@ void imprimirIndices(const char* nomeArquivo) {
 
     fclose(arqIndiceNonce);
 }
+//-------------------------------------------------------------------------------
+void escreverArquivoBinarioComTransacoes(TBlocoETransacoes *vetorBlocosComTransacoes, int quantidadeDeElementosEscritosNoArquivo, const char *nomeArquivo){
+  FILE *arqBinario = fopen(nomeArquivo, "wb");
+  if (arqBinario == NULL)
+  {
+    printf("Erro ao criar o arquivo binario de blocos minerados.\n");
+    return;
+  }
 
+    // calculo para saber a quantidade de "chunks" escritas no arquivo
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
 
+  // se nao for multiplo de 16 haverao elementos restantes
+  int elementosRestantes = quantidadeDeElementosEscritosNoArquivo % 16;
+  int indiceDestino=0;
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fwrite(&vetorBlocosComTransacoes[indiceDestino], sizeof(TBlocoETransacoes), 16, arqBinario);
+    indiceDestino+=16;
+  }
+
+  //verificar isso aqui
+  if(elementosRestantes>0){
+    fwrite(&vetorBlocosComTransacoes[indiceDestino], sizeof(TBlocoETransacoes), elementosRestantes, arqBinario);
+  }
+}
 //-------------------------------------------------------------------------------
 void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char *nomeArquivo)
 {
@@ -958,6 +1019,82 @@ void procurarBlocoEmArquivoBinario(unsigned char *nomeDoArquivo, int quantidadeD
       fclose(arqBinario);
       return;
     }
+  }
+
+  fclose(arqBinario);
+}
+//-------------------------------------------------------------------------------------------------------------------
+void carregarNBlocos(const char *nomeArquivo, unsigned quantidadeDeElementosEscritosNoArquivo, unsigned int qtdBlocosImprimir)
+{
+  FILE *arqBinario = fopen(nomeArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura na funcao carregarNBlocos\n");
+    return;
+  }
+  TBlocoETransacoes vetorBlocosMinerados[qtdBlocosImprimir];
+
+  // calculo para saber a quantidade de "chunks" escritas no arquivo
+  int quantidadeDeChunksQueDevemSerLidos = qtdBlocosImprimir / 16;
+
+  int elementosRestantes = qtdBlocosImprimir % 16;
+  int indiceDestino = 0;
+  for (int chunk = 0; chunk < quantidadeDeChunksQueDevemSerLidos; chunk++)
+  {
+    fread(&vetorBlocosMinerados[indiceDestino], sizeof(TBlocoETransacoes), 16, arqBinario);
+    indiceDestino += 16;
+  }
+
+  if (elementosRestantes > 0)
+  {
+    fread(&vetorBlocosMinerados[indiceDestino], sizeof(TBlocoETransacoes), elementosRestantes, arqBinario);
+  }
+
+  /*
+  for(int i=0; i<qtdBlocosImprimir; i++){
+    printf("Bloco: %u\nTransacoes: %u\n", vetorBlocosMinerados[i].bloco.bloco.numero, vetorBlocosMinerados[i].qtdTransacoes);
+  }
+  */
+
+  // quickSort(vetorBlocosMinerados, 0, qtdBlocosImprimir-1);
+  mergeSort(vetorBlocosMinerados, 0, qtdBlocosImprimir - 1);
+
+  for (int i = 0; i < qtdBlocosImprimir; i++)
+  {
+    // printf("Bloco: %u\nTransacoes: %u\n", vetorBlocosMinerados[i].bloco.bloco.numero, vetorBlocosMinerados[i].qtdTransacoes);
+    printf("\n");
+    printf("=======================================\n");
+    printf("Bloco: %d\n", vetorBlocosMinerados[i].bloco.bloco.numero);
+    printf("Nonce: %d\n", vetorBlocosMinerados[i].bloco.bloco.nonce);
+    printf("Minerador: %u\n", vetorBlocosMinerados[i].bloco.bloco.data[183]);
+    printf("Hash anterior: ");
+    printHash(vetorBlocosMinerados[i].bloco.bloco.hashAnterior, SHA256_DIGEST_LENGTH);
+    printf("Hash valido: ");
+    printHash(vetorBlocosMinerados[i].bloco.hash, SHA256_DIGEST_LENGTH);
+
+    printf("\nTRANSACOES\n");
+    if (i == 0)
+    {
+      int j = 0;
+      while (vetorBlocosMinerados[i].bloco.bloco.data[j] != '\0')
+      {
+        printf("%c", vetorBlocosMinerados[i].bloco.bloco.data[j]);
+        j++;
+      }
+    }
+    else
+    {
+      for (int j = 0; j < 184; j++)
+      {
+        printf("[%u] - ", vetorBlocosMinerados[i].bloco.bloco.data[j]);
+        if ((j + 1) % 3 == 0)
+        {
+          printf("\n");
+        }
+      }
+    }
+
+    printf("\n=======================================\n");
   }
 
   fclose(arqBinario);
@@ -1461,6 +1598,20 @@ int main(int argc, char *argv[])
     break;
     case 8:
     {
+      escreverArquivoBinarioComTransacoes(vetorBlocosComTransacoes, quantidadeDeElementosEscritosNoArquivoBinario, "blocos_minerados_e_qtd_transacoes.bin");
+      unsigned int qtdBlocosImprimir;
+      printf("Quantidade de blocos que deseja imprimir: ");
+      scanf("%u", &qtdBlocosImprimir);
+      if (qtdBlocosMinerar < qtdBlocosImprimir)
+      {
+        while(qtdBlocosMinerar < qtdBlocosImprimir)
+        {
+          printf("\nQuantidade de blocos para imprimir invalida\n");
+          printf("Quantidade de blocos que deseja imprimir: ");
+          scanf("%u", &qtdBlocosImprimir);
+        }
+      }
+      carregarNBlocos("blocos_minerados_e_qtd_transacoes.bin", quantidadeDeElementosEscritosNoArquivoBinario, qtdBlocosImprimir);
     }
     break;
     case 9:
