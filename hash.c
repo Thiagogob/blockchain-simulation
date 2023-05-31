@@ -1288,15 +1288,32 @@ int main(int argc, char *argv[])
     break;
     case 5:
     {
+      unsigned int numeroBlocoProcurado;
+      printf("Numero do bloco que deseja procurar: ");
+      scanf("%u", &numeroBlocoProcurado);
+      int qtdTransacoes = vetorBlocosComTransacoes[numeroBlocoProcurado-1].qtdTransacoes;
+      int qtdBTCNoBloco=0;
+      for(int p=0; p<qtdTransacoes; p++){
+        for(int j=0; j<3; j++){
+            if(j==2){
+              qtdBTCNoBloco+=vetorBlocosComTransacoes[numeroBlocoProcurado-1].bloco.bloco.data[(p * 3) + j];
+            }
+        }
+      }
+      printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: %.3f\n", numeroBlocoProcurado, (float)qtdBTCNoBloco/qtdTransacoes);
+      printf("Quantidade media de BTC transacionadas no bloco %d de endereco para endereco e considerando as BTC dadas ao minerador: %.3f\n", numeroBlocoProcurado, (float)(qtdBTCNoBloco+50)/qtdTransacoes);
       //como nenhuma BTC sai do sistema ou some
       //Eh valido dizer que a media de BTC por bloco eh o total de BTC no sistema
       //dividido pela quantia de blocos minerados
+      /*
       int qtdTotalBTC=0;
       for(int i=0; i<256; i++){
         qtdTotalBTC+=carteira[i];
       }
       float qtdBTCPorBloco = (float)qtdTotalBTC/qtdBlocosMinerar;
       printf("\nQuantidade media de BTC por bloco: %.3f\n", qtdBTCPorBloco);
+      */
+      
     }
     break;
     case 6:
