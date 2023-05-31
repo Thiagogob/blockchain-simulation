@@ -36,6 +36,13 @@ typedef struct TIndiceMinerador{
 }TIndiceMinerador;
 
 //-------------------------------------------------------------------------------
+
+typedef struct TListaIndiceNonce{
+  BlocoMinerado dadosBloco;
+  struct TIndiceNonceLista* next;
+}TListaIndiceNonce;
+
+//-------------------------------------------------------------------------------
 // lista que vai conter os enderecos que possuem BTC
 typedef struct listaBTC
 {
@@ -559,7 +566,32 @@ int binarySearchBaseadoNoNumero(BlocoMinerado *vetorBlocosMinerados, int menor, 
 
 
 //--------------------------------------------------------------------------------------
+void escreverArquivoBinarioDeIndicesBaseadoNoNonce(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo){
+    FILE *arqBinario = fopen(nomeArquivo, "ab");
+    if (arqBinario == NULL)
+    {
+      printf("\nErro ao criar o arquivo binario de indices sobre o nonce.\n");
+      return;
+    }
 
+    TListaIndiceNonce vetorAux[16];
+
+    for(int i=0; i<16; i++){
+      vetorAux[i].dadosBloco = vetorBlocosMinerados[i];
+      vetorAux[i].next = NULL;
+    }
+
+    size_t quantidadeElementosEscritos = fwrite(vetorAux, sizeof(TListaIndiceNonce), 16, arqBinario);
+
+    if(quantidadeElementosEscritos != quantidadeDeElementosParaEscrever){
+      printf("\nErro na escrita do arquivo binario de indices nonce\n");
+      fclose(arqBinario);
+      return;
+    }
+
+    fclose(arqBinario);
+    return;
+}
 //---------------------------------------------------------------------------------------------------
 void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char* nomeArquivo, unsigned int *contagemDeMineracoesPorEndereco){
     FILE *arqBinario = fopen(nomeArquivo, "ab");
@@ -744,23 +776,12 @@ void imprimirDadosArquivo(const char* nomeArquivo)
     return;
   }
 
-  BlocoMinerado bloco;
+  TListaIndiceNonce bloco;
   //unsigned char minerador;
-  for (int i = 0; i < 16; i++) {
-    fread(&bloco, sizeof(BlocoMinerado), 1, arquivo);
-
-    printf("Bloco %d:\n", i + 1);
-    printf("Numero: %u\n", bloco.bloco.numero);
-    printf("Nonce: %u\n", bloco.bloco.nonce);
-    printf("Hash Anterior: ");
-    for (int j = 0; j < SHA256_DIGEST_LENGTH; j++) {
-      printf("%02x", bloco.bloco.hashAnterior[j]);
-    }
-    printf("\n");
-    printf("Hash valido: ");
-    for (int j = 0; j < SHA256_DIGEST_LENGTH; j++) {
-      printf("%02x", bloco.hash[j]);
-    }
+  for (int i = 0; i < 64; i++) {
+    fread(&bloco, sizeof(TListaIndiceNonce), 1, arquivo);
+    printf("Numero: %u\n", bloco.dadosBloco.bloco.numero);
+    printf("Nonce: %u\n", bloco.dadosBloco.bloco.nonce);
     printf("\n\n");
   }
 
@@ -1054,7 +1075,7 @@ int main(int argc, char *argv[])
       
       escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin", contagemDeMineracoesPorEndereco);
       
-      
+      escreverArquivoBinarioDeIndicesBaseadoNoNonce(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       
       
       
@@ -1067,6 +1088,7 @@ int main(int argc, char *argv[])
       escreverArquivoTexto(vetorBlocosMinerados);
       escreverArquivoBinario(vetorBlocosMinerados, 16, "blocos_minerados.bin");
       escreverArquivoBinarioDeIndicesBaseadoNoMinerador(vetorBlocosMinerados, 16, "arquivo_indices_minerador.bin", contagemDeMineracoesPorEndereco);
+      escreverArquivoBinarioDeIndicesBaseadoNoNonce(vetorBlocosMinerados, 16, "arquivo_indices_nonce.bin");
       quantidadeDeElementosEscritosNoArquivoBinario += 16;
     }
 
@@ -1229,6 +1251,7 @@ int main(int argc, char *argv[])
       scanf("%u", &nonceProcurado);
       procurarNonceEmArquivoBinario("arquivo_indices_nonce.bin", quantidadeDeElementosEscritosNoArquivoBinario, nonceProcurado);
       */
+     imprimirDadosArquivo("arquivo_indices_nonce.bin");
     }
     break;
     default:
