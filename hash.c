@@ -38,9 +38,15 @@ typedef struct TIndiceMinerador{
 //-------------------------------------------------------------------------------
 
 typedef struct TListaIndiceNonce{
+  unsigned int nonce;
   BlocoMinerado dadosBloco;
-  struct TIndiceNonceLista* next;
+  struct TListaIndiceNonce* next;
 }TListaIndiceNonce;
+//-------------------------------------------------------------------------------
+
+typedef struct HashTable{
+  TListaIndiceNonce *tabelaNonces[30011];
+}HashTable;
 
 //-------------------------------------------------------------------------------
 // lista que vai conter os enderecos que possuem BTC
@@ -68,9 +74,60 @@ listaBTC *criaNo(unsigned int endereco)
   novoEndereco->next = NULL;
   return novoEndereco;
 }
+//-------------------------------------------------------------------------------
+TListaIndiceNonce* criarNovoNo(unsigned int nonce, BlocoMinerado dadosBloco) {
+  TListaIndiceNonce* novoNo = (TListaIndiceNonce*)malloc(sizeof(TListaIndiceNonce));
+  novoNo->nonce = nonce;
+  novoNo->dadosBloco = dadosBloco;
+  novoNo->next = NULL;
+  return novoNo;
+}
+//-------------------------------------------------------------------------------
+void inserirNoInicioHashTable(TListaIndiceNonce** lista, unsigned int nonce, BlocoMinerado dadosBloco) {
+  TListaIndiceNonce* novoNo = criarNovoNo(nonce, dadosBloco);
+  novoNo->next = *lista;
+  *lista = novoNo;
+}
+//-------------------------------------------------------------------------------
+void exibirLista(TListaIndiceNonce* lista, unsigned char nonce) {
+  while (lista != NULL) {
+    if(lista->nonce == nonce){
+      printf("\n");
+      printf("=======================================\n");
+      printf("Bloco: %d\n", lista->dadosBloco.bloco.numero);
+      printf("Nonce: %d\n", lista->dadosBloco.bloco.nonce);
+      printf("Minerador: %u\n", lista->dadosBloco.bloco.data[183]);
+      printf("Hash anterior: ");
+      for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+        printf("%02x", lista->dadosBloco.bloco.hashAnterior[i]);
+
+      printf("\n");
+      printf("Hash valido: ");
+      for (int i = 0; i < SHA256_DIGEST_LENGTH; ++i)
+        printf("%02x", lista->dadosBloco.hash[i]);
+
+      printf("\n");
+
+      printf("\nTRANSACOES\n");
+      for (int i = 0; i < 184; i++)
+      {
+        printf("[%u] - ", lista->dadosBloco.bloco.data[i]);
+        if ((i + 1) % 3 == 0)
+        {
+          printf("\n");
+        }
+      }
+      printf("\n=======================================\n");
+    }
+    // Exibir os dados do bloco, se necessário
+    lista = lista->next;
+  }
+}
+//-------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------
 
+//-------------------------------------------------------------------------------
 // Funcao para inserir um endereco na lista dos que tem BTC
 void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
 {
@@ -577,6 +634,7 @@ void escreverArquivoBinarioDeIndicesBaseadoNoNonce(BlocoMinerado *vetorBlocosMin
     TListaIndiceNonce vetorAux[16];
 
     for(int i=0; i<16; i++){
+      vetorAux[i].nonce = vetorBlocosMinerados[i].bloco.nonce;
       vetorAux[i].dadosBloco = vetorBlocosMinerados[i];
       vetorAux[i].next = NULL;
     }
@@ -641,7 +699,41 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
 //---------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------
+void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElementosEscritosNoArquivo){
+  FILE *arqBinario = fopen(nomeArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Erro ao criar o arquivo binario de blocos minerados.\n");
+    return;
+  }
+  
+  TListaIndiceNonce *vetorLista[30011];
+  for(int i=0; i<30011; i++){
+    vetorLista[i] = NULL;
+  }
+  
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
 
+  TListaIndiceNonce vetorAux[16];
+  for(int chunk=0; chunk < quantidadeDeChunksEscritos; chunk++){
+    fread(vetorAux, sizeof(TListaIndiceNonce), 16, arqBinario);
+    for(int j=0; j<16; j++){
+      int index = vetorAux[j].nonce%30011;
+      inserirNoInicioHashTable(&vetorLista[index], vetorAux[j].nonce, vetorAux[j].dadosBloco);
+
+      //insert(tabelaNonces, vetorAux[j].dadosBloco, vetorAux[j].dadosBloco.bloco.nonce);
+    }
+  }
+
+
+  printf("Digite um Nonce: ");
+  unsigned int nonceProcurado;
+  scanf("%u", &nonceProcurado);
+  int index = nonceProcurado%30011;
+  exibirLista(vetorLista[index], nonceProcurado);
+  //printf("\n%u\n", vetorLista[index]->nonce);
+
+}
 //-------------------------------------------------------------------------------
 void escreverArquivoBinarioComTransacoes(TBlocoETransacoes *vetorBlocosComTransacoes, int quantidadeDeElementosEscritosNoArquivo, const char *nomeArquivo){
   FILE *arqBinario = fopen(nomeArquivo, "wb");
@@ -1108,6 +1200,7 @@ int main(int argc, char *argv[])
     printf("7. Imprimir todos os campos dos N primeiros blocos minerados por um endereco\n");
     printf("8. Imprimir em ordem crescente de quantidade de transacoes todos os campos dos N primeiros blocos\n");
     printf("9. Imprimir todos os campos de todos os blocos que tem um dado nonce\n");
+    printf("10. Finalizar programa\n");
     printf("Escolha uma opcao: ");
     scanf("%d", &choice);
 
@@ -1245,20 +1338,21 @@ int main(int argc, char *argv[])
     break;
     case 9:
     {
-      /*
-      unsigned int nonceProcurado;
-      printf("Digite um nonce: ");
-      scanf("%u", &nonceProcurado);
-      procurarNonceEmArquivoBinario("arquivo_indices_nonce.bin", quantidadeDeElementosEscritosNoArquivoBinario, nonceProcurado);
-      */
-     imprimirDadosArquivo("arquivo_indices_nonce.bin");
+  
+     carregarArquivoNoncesEmRAM("arquivo_indices_nonce.bin", quantidadeDeElementosEscritosNoArquivoBinario);
+
+    }
+    break;
+    case 10:
+    {
+      printf("\n==============PROGRAMA FINALIZADO==============\n");
     }
     break;
     default:
       printf("Opcao invalida.\n");
       break;
     }
-  } while (choice != 0);
+  } while (choice != 10);
 
   return 0;
 }
