@@ -33,6 +33,9 @@ typedef struct BlocoMinerado
 typedef struct TIndiceMinerador{
   unsigned int minerador;
   BlocoMinerado blocoDoMinerador;
+  struct TIndiceMinerador *esq;
+  struct TIndiceMinerador *dir;
+  int marcadorLido;
 }TIndiceMinerador;
 
 //-------------------------------------------------------------------------------
@@ -44,9 +47,6 @@ typedef struct TListaIndiceNonce{
 }TListaIndiceNonce;
 //-------------------------------------------------------------------------------
 
-typedef struct HashTable{
-  TListaIndiceNonce *tabelaNonces[30011];
-}HashTable;
 
 //-------------------------------------------------------------------------------
 // lista que vai conter os enderecos que possuem BTC
@@ -55,12 +55,41 @@ typedef struct listaBTC
   unsigned int endereco;
   struct listaBTC *next;
 } listaBTC;
-
+//-------------------------------------------------------------------------------
 typedef struct TBlocoETransacoes{
   unsigned int qtdTransacoes;
   BlocoMinerado bloco;
 }TBlocoETransacoes;
+//-------------------------------------------------------------------------------
+TIndiceMinerador *criaNoMinerador(unsigned int minerador, BlocoMinerado dadosBloco){
+    TIndiceMinerador *novoNo = malloc(sizeof(TIndiceMinerador));
+    if(novoNo){
+        novoNo->blocoDoMinerador = dadosBloco;
+        novoNo->minerador = minerador;
+        novoNo->marcadorLido = 0;
+        novoNo->esq = NULL;
+        novoNo->dir = NULL;
+    }
+    return novoNo;
+}
+//-------------------------------------------------------------------------------
+void insereNoIterativo(TIndiceMinerador **raiz, unsigned int minerador, BlocoMinerado dadosBloco){
+    TIndiceMinerador *aux = *raiz;
+    while(aux){
+        if(minerador < (*raiz)->minerador){
+            raiz = &aux->esq;
+        }
+        else{
+            raiz = &aux->dir;
+        }
+        aux = *raiz;
+    }
+     
+    *raiz = criaNoMinerador(minerador, dadosBloco);
 
+}
+
+//-------------------------------------------------------------------------------
 // Funcao para criar um no na lista dos enderecos que tem BTC
 listaBTC *criaNo(unsigned int endereco)
 {
@@ -618,6 +647,28 @@ int binarySearchBaseadoNoNumero(BlocoMinerado *vetorBlocosMinerados, int menor, 
   return -1;
 }
 //---------------------------------------------------------------------------------------------------------------
+void buscaNo(TIndiceMinerador *raiz, unsigned int minerador, int quantidadeDeBlocos, int controleImpressoes){
+    
+    if(!raiz){
+        printf("\nEndereco %u minerou menos que %d blocos. Mas esses foram seus blocos minerados\n", minerador, quantidadeDeBlocos);
+        return;
+    }
+    if(raiz->minerador == minerador && raiz->marcadorLido == 0){
+        printarDadosDeUmBloco(raiz->blocoDoMinerador);
+        raiz->marcadorLido=1;
+        controleImpressoes++;
+        if(controleImpressoes == quantidadeDeBlocos){
+          return;
+        }
+    }
+    if(minerador < raiz->minerador){
+        buscaNo(raiz->esq, minerador, quantidadeDeBlocos, controleImpressoes);
+    }
+    else{
+        buscaNo(raiz->dir, minerador, quantidadeDeBlocos, controleImpressoes);
+    }
+    
+}
 
 //----------------------------------------- FUNÇÕES MANIPULAÇÃO DE ARQUIVOS -------------------------------------
 
@@ -663,6 +714,9 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
     for(int j=0; j<16; j++){
       vetorIndicesMineradores[j].minerador = vetorBlocosMinerados[j].bloco.data[183];
       vetorIndicesMineradores[j].blocoDoMinerador = vetorBlocosMinerados[j];
+      vetorIndicesMineradores[j].esq=NULL;
+      vetorIndicesMineradores[j].dir=NULL;
+      vetorIndicesMineradores[j].marcadorLido = 0;
       //printf("\nMinerador: %u\n",vetorIndicesMineradores[i].minerador);
       //printf("Bloco: %u\n", vetorIndicesMineradores[i].blocoDoMinerador.bloco.numero);
     }
@@ -695,9 +749,43 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
   fclose(arqBinario);
 }
 //---------------------------------------------------------------------------------------------------
+void printArvore(TIndiceMinerador *raiz){
+    if(raiz == NULL){
+        return;
+    }
+    printArvore(raiz->esq);
+
+    printf("%u\n ", raiz->minerador);
+
+    printArvore(raiz->dir);
+}
 
 //---------------------------------------------------------------------------------------------------
-
+void procurarNoArquivoDeIndicesMinerador2(unsigned int minerador, int quantidadeDeBlocos,unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
+{
+  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
+  if (arqBinario == NULL)
+  {
+    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca no arquivo de indices minerador\n");
+    return;
+  }
+  TIndiceMinerador vetorBlocosMineradores[16];
+  TIndiceMinerador *raiz = NULL;
+  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
+  int contadorQtdBlocos=0;
+  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
+  {
+    fread(vetorBlocosMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
+    //int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
+    for(int i=0; i<16; i++){
+        insereNoIterativo(&raiz, vetorBlocosMineradores[i].minerador, vetorBlocosMineradores[i].blocoDoMinerador);
+    }
+  }
+  //printf("Esse endereco minerou menos que %d bloco(s)\nMas esses foram os blocos que minerou\n", quantidadeDeBlocos);
+  //printArvore(raiz);
+  int controleImpressoes=0;
+  buscaNo(raiz, minerador, quantidadeDeBlocos, controleImpressoes);
+}
 //-------------------------------------------------------------------------------
 void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElementosEscritosNoArquivo){
   FILE *arqBinario = fopen(nomeArquivo, "rb");
@@ -998,36 +1086,7 @@ void carregarNBlocos(const char *nomeArquivo, unsigned quantidadeDeElementosEscr
   fclose(arqBinario);
 }
 //-------------------------------------------------------------------------------------------------------------------
-void procurarNoArquivoDeIndicesMinerador(unsigned int enderecoMinerador, int quantidadeDeBlocos, unsigned char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
-{
-  FILE *arqBinario = fopen(nomeDoArquivo, "rb");
-  if (arqBinario == NULL)
-  {
-    printf("Nao foi possivel abrir o arquivo binario para leitura\nNo contexto de realizar uma busca no arquivo de indices minerador\n");
-    return;
-  }
-  TIndiceMinerador vetorBlocosMineradores[16];
 
-  int quantidadeDeChunksEscritos = quantidadeDeElementosEscritosNoArquivo / 16;
-  int contadorQtdBlocos=0;
-  for (int chunk = 0; chunk < quantidadeDeChunksEscritos; chunk++)
-  {
-    fread(vetorBlocosMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
-    //int flag = binarySearchBaseadoNoNumero(vetorBlocosMinerados, 0, 15, numeroBlocoProcurado);
-    for(int i=0; i<16; i++){
-      if(vetorBlocosMineradores[i].minerador == enderecoMinerador){
-        printarDadosDeUmBloco(vetorBlocosMineradores[i].blocoDoMinerador);
-        contadorQtdBlocos++;
-      }
-    }
-    if(contadorQtdBlocos==quantidadeDeBlocos){
-      fclose(arqBinario);
-      return;
-    }
-  }
-  printf("Esse endereco minerou menos que %d bloco(s)\nMas esses foram os blocos que minerou\n", quantidadeDeBlocos);
-
-}
 //-------------------------------------------------------------------------------------------------------------------
 void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
 {
@@ -1332,7 +1391,7 @@ int main(int argc, char *argv[])
       scanf("%u", &enderecoMinerador);
       printf("Digite a quantidade de blocos minerados por esse minerador\nque voce deseja imprimir: ");
       scanf("%d", &quantidadeDeBlocos);
-      procurarNoArquivoDeIndicesMinerador(enderecoMinerador, quantidadeDeBlocos, "arquivo_indices_minerador.bin", quantidadeDeElementosEscritosNoArquivoBinario);
+      procurarNoArquivoDeIndicesMinerador2(enderecoMinerador, quantidadeDeBlocos, "arquivo_indices_minerador.bin", quantidadeDeElementosEscritosNoArquivoBinario);
     }
     break;
     case 8:
