@@ -47,8 +47,6 @@ typedef struct TListaIndiceNonce{
 }TListaIndiceNonce;
 //-------------------------------------------------------------------------------
 
-
-//-------------------------------------------------------------------------------
 // lista que vai conter os enderecos que possuem BTC
 typedef struct listaBTC
 {
@@ -154,9 +152,6 @@ void exibirLista(TListaIndiceNonce* lista, unsigned char nonce) {
 }
 //-------------------------------------------------------------------------------
 
-//-------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------
 // Funcao para inserir um endereco na lista dos que tem BTC
 void insereNoInicio(listaBTC **inicio, unsigned int endereco, int *contador)
 {
@@ -295,13 +290,6 @@ void mergeSort(TBlocoETransacoes arr[], int left, int right) {
         merge(arr, left, middle, right);
     }
 }
-
-//-------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------
-
 
 //-------------------------------------------------------------------------------
 
@@ -717,30 +705,17 @@ void escreverArquivoBinarioDeIndicesBaseadoNoMinerador(BlocoMinerado *vetorBloco
       vetorIndicesMineradores[j].esq=NULL;
       vetorIndicesMineradores[j].dir=NULL;
       vetorIndicesMineradores[j].marcadorLido = 0;
-      //printf("\nMinerador: %u\n",vetorIndicesMineradores[i].minerador);
-      //printf("Bloco: %u\n", vetorIndicesMineradores[i].blocoDoMinerador.bloco.numero);
+
     }
 
     for (int i = 0; i < 16; i++)
     {
-      //printf("\nMinerador: %u\n",vetorIndicesMineradores[i].minerador);
-      //printf("Bloco: %u\n", vetorIndicesMineradores[i].blocoDoMinerador.bloco.numero);
+
       contagemDeMineracoesPorEndereco[vetorIndicesMineradores[i].minerador]++;
     }
-    /*
-    unsigned char elementosParaEscrever[16];
-    for (int i = 0; i < 16; i++) {
-        elementosParaEscrever[i] = vetorBlocosMinerados[i].bloco.data[183];
-    }
-    */
+
     size_t quantidadeDeElementosEscritos = fwrite(vetorIndicesMineradores, sizeof(TIndiceMinerador), quantidadeDeElementosParaEscrever, arqBinario);
-    //fread(vetorIndicesMineradores, sizeof(TIndiceMinerador), 16, arqBinario);
-    /*
-    for(int j=0; j<16; j++){
-      printf("\nMinerador: %u\n",vetorIndicesMineradores[j].minerador);
-      printf("Bloco: %u\n", vetorIndicesMineradores[j].blocoDoMinerador.bloco.numero);
-    }
-    */
+
     if (quantidadeDeElementosEscritos != quantidadeDeElementosParaEscrever)
     {
       printf("Erro na escrita do arquivo binario");
@@ -781,12 +756,11 @@ void procurarNoArquivoDeIndicesMinerador2(unsigned int minerador, int quantidade
         insereNoIterativo(&raiz, vetorBlocosMineradores[i].minerador, vetorBlocosMineradores[i].blocoDoMinerador);
     }
   }
-  //printf("Esse endereco minerou menos que %d bloco(s)\nMas esses foram os blocos que minerou\n", quantidadeDeBlocos);
-  //printArvore(raiz);
+
   int controleImpressoes=0;
   buscaNo(raiz, minerador, quantidadeDeBlocos, controleImpressoes);
 }
-//-------------------------------------------------------------------------------
+//------------------------------------------------------------------------------------------------------------
 void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElementosEscritosNoArquivo){
   FILE *arqBinario = fopen(nomeArquivo, "rb");
   if (arqBinario == NULL)
@@ -822,7 +796,8 @@ void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElement
   //printf("\n%u\n", vetorLista[index]->nonce);
 
 }
-//-------------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------------------------------------------------------------------------------------
 void escreverArquivoBinarioComTransacoes(TBlocoETransacoes *vetorBlocosComTransacoes, int quantidadeDeElementosEscritosNoArquivo, const char *nomeArquivo){
   FILE *arqBinario = fopen(nomeArquivo, "wb");
   if (arqBinario == NULL)
@@ -848,7 +823,8 @@ void escreverArquivoBinarioComTransacoes(TBlocoETransacoes *vetorBlocosComTransa
     fwrite(&vetorBlocosComTransacoes[indiceDestino], sizeof(TBlocoETransacoes), elementosRestantes, arqBinario);
   }
 }
-//-------------------------------------------------------------------------------
+
+//--------------------------------------------------------------------------------------------------------------------------------------------
 void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeDeElementosParaEscrever, const char *nomeArquivo)
 {
   FILE *arqBinario = fopen(nomeArquivo, "ab");
@@ -870,7 +846,7 @@ void escreverArquivoBinario(BlocoMinerado *vetorBlocosMinerados, int quantidadeD
 }
 
 
-//-------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------
 
 void escreverArquivoTexto(BlocoMinerado *vetorBlocosMinerados)
 {
@@ -1085,7 +1061,6 @@ void carregarNBlocos(const char *nomeArquivo, unsigned quantidadeDeElementosEscr
 
   fclose(arqBinario);
 }
-//-------------------------------------------------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------------------------------------------------
 void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeElementosEscritosNoArquivo)
@@ -1111,16 +1086,23 @@ void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeEl
     for (int i = 0; i < 16; i++)
     {
       printf("\nMinerador: %u\n",vetorBlocosMineradores[i].minerador);
+
       printf("Bloco: %u\n", vetorBlocosMineradores[i].blocoDoMinerador.bloco.numero);
+
       contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador]++;
+
       if(contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador] > maiorQtdMineracoes){
+
         maiorQtdMineracoes = contagemDeMineracoesPorEndereco[vetorBlocosMineradores[i].minerador];
+
       }
     }
   }
   for(int i=0; i<256; i++){
     if(contagemDeMineracoesPorEndereco[i] == maiorQtdMineracoes){
+
       printf("Endereco %u minerou a maior quantidade de blocos(%u)\n", i, maiorQtdMineracoes);
+
     }
   }
   fclose(arqBinario);
@@ -1128,14 +1110,6 @@ void procurarQuemMinerouMaisBlocos(const char *nomeDoArquivo, int quantidadeDeEl
 }
 //-------------------------------------------------------------------------------------------------------------------
 
-//-------------------------------------------------------------------------------------------------------------------
-
-//-------------------------------------------------------------------------------------------------------------------
-
-//--------------------------------------------------------------------------------------------------------------------
-
-
-//--------------------------------------------------------------------------------------------------------------------
 
 int main(int argc, char *argv[])
 {
@@ -1359,20 +1333,16 @@ int main(int argc, char *argv[])
             }
         }
       }
-      printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: %.3f\n", numeroBlocoProcurado, (float)qtdBTCNoBloco/qtdTransacoes);
-      printf("Quantidade media de BTC transacionadas no bloco %d de endereco para endereco e considerando as BTC dadas ao minerador: %.3f\n", numeroBlocoProcurado, (float)(qtdBTCNoBloco+50)/qtdTransacoes);
-      //como nenhuma BTC sai do sistema ou some
-      //Eh valido dizer que a media de BTC por bloco eh o total de BTC no sistema
-      //dividido pela quantia de blocos minerados
-      /*
-      int qtdTotalBTC=0;
-      for(int i=0; i<256; i++){
-        qtdTotalBTC+=carteira[i];
+      if(qtdTransacoes!=0)
+      {
+        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: %.3f\n", numeroBlocoProcurado, (float)qtdBTCNoBloco/qtdTransacoes);
+        printf("Quantidade media de BTC transacionadas no bloco %d de endereco para endereco e considerando as BTC dadas ao minerador: %.3f\n", numeroBlocoProcurado, (float)(qtdBTCNoBloco+50)/qtdTransacoes);
       }
-      float qtdBTCPorBloco = (float)qtdTotalBTC/qtdBlocosMinerar;
-      printf("\nQuantidade media de BTC por bloco: %.3f\n", qtdBTCPorBloco);
-      */
-      
+      else{
+        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: 0\n", numeroBlocoProcurado);
+        printf("Quantidade media de BTC transacionadas no bloco %d de endereco para endereco e considerando as BTC dadas ao minerador: 0\n", numeroBlocoProcurado);
+      }
+
     }
     break;
     case 6:
