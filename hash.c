@@ -1380,11 +1380,11 @@ int main(int argc, char *argv[])
       }
       if(qtdTransacoes!=0)
       {
-        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: %.3f\n", numeroBlocoProcurado, (float)qtdBTCNoBloco/qtdTransacoes);
+        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: %.3fBTC\n", numeroBlocoProcurado, (float)qtdBTCNoBloco/qtdTransacoes);
       }
       else
       {
-        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: 0\n", numeroBlocoProcurado);
+        printf("Quantidade media de BTC transacionadas no bloco %d somente de endereco para endereco: 0BTC\n", numeroBlocoProcurado);
       }
 
     }
