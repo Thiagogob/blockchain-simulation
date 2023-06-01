@@ -793,7 +793,6 @@ void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElement
   scanf("%u", &nonceProcurado);
   int index = nonceProcurado%30011;
   TListaIndiceNonce *lista = vetorLista[index];
-  exibirLista(vetorLista[index], nonceProcurado);
   while (lista != NULL)
   {
     if (lista->dadosBloco.bloco.nonce == nonceProcurado)
@@ -830,10 +829,8 @@ void carregarArquivoNoncesEmRAM(const char* nomeArquivo, int quantidadeDeElement
     {
       lista = lista->next;
     }
-    // Exibir os dados do bloco, se necessário
   }
 
-  //printf("\nNonce la: %u\n", vetorLista[index]->nonce);
   fclose(arqBinario);
   return;
 
